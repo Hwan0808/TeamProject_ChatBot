@@ -16,3 +16,7 @@
 - 서버 접속, 해제 버튼, 닉네임 설정 옵션을 추가
 - 클라이언트를 서버 관리자가 지정하여 강제로 접속 해제 할 수 있는 기능 추가
 - 클라이언트간의 채팅방 접속을 구현하고, 파일전송 기능 추가
+
+![image](https://user-images.githubusercontent.com/57865037/141115359-b019ae94-a7ff-4abc-8be9-47cd143f1824.png)
+
+![image](https://user-images.githubusercontent.com/57865037/141115367-c37c3113-3a3d-46a1-8402-4106b84d8e1d.png)
