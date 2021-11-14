@@ -6,11 +6,14 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <commdlg.h>
-
+#include <time.h>
+#include <iostream>
+#include <string>
 #include "resource.h"
 
 #define SERVERPORT 9000
-#define BUFSIZE    512
+#define BUFSIZE    4096
+#define NAMESIZE 20
 
 // 대화상자 프로시저
 BOOL CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM);
@@ -25,19 +28,14 @@ void err_display(char *msg);
 DWORD WINAPI ServerMain(LPVOID arg);
 DWORD WINAPI ProcessClient(LPVOID arg);
 
-char buf[BUFSIZE + 1]; // 데이터 송수신 버퍼
 HINSTANCE hInst; // 인스턴스 핸들
 HANDLE hReadEvent, hWriteEvent; // 이벤트
-HWND hEdit; // 편집 컨트롤
+HWND hEdit; // 에디트 박스 편집 컨트롤 (왼쪽)
+HWND iEdit; // 에디트 박스 편집 컨트롤 (오른쪽)
+
 HWND hEndButton; // 보내기 버튼
 CRITICAL_SECTION cs; // 임계 영역
 HWND hWnd; // 윈도우 프로시저
-
-typedef struct user {
-    int id;
-    int ip;
-    int port;
-} USER;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLine, int nCmdShow)
@@ -74,16 +72,14 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg) {
     case WM_INITDIALOG:
         hEdit = GetDlgItem(hDlg, IDC_EDIT1);
+        iEdit = GetDlgItem(hDlg, IDC_EDIT2);
         hEndButton = GetDlgItem(hDlg, IDCANCEL);
         SendMessage(hEdit, EM_SETLIMITTEXT, BUFSIZE, 0);
         return TRUE;
 
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
-        case IDC_EDIT1:
-            GetDlgItemText(hDlg, IDC_EDIT1, buf, BUFSIZE + 1);
-            SendMessage(hEdit, EM_SETSEL, 0, -1);
-            return TRUE;
+       
         case IDCANCEL:
             Return = MessageBox(hWnd, _T("종료하시겠습니까?"), _T("확인"), MB_YESNO);
             if (Return == IDYES) {
@@ -145,6 +141,25 @@ void err_display(char *msg)
     LocalFree(lpMsgBuf);
 }
 
+int recvn(SOCKET s, char* buf, int len, int flags)
+{
+    int received;
+    char* ptr = buf;
+    int left = len;
+
+    while (left > 0) {
+        received = recv(s, ptr, left, flags);
+        if (received == SOCKET_ERROR)
+            return SOCKET_ERROR;
+        else if (received == 0)
+            break;
+        left -= received;
+        ptr += received;
+    }
+
+    return (len - left);
+}
+
 // TCP 서버 시작 부분
 DWORD WINAPI ServerMain(LPVOID arg)
 {
@@ -180,6 +195,7 @@ DWORD WINAPI ServerMain(LPVOID arg)
 
     while (1) {
         // accept()
+        
         addrlen = sizeof(clientaddr);
         client_sock = accept(listen_sock, (SOCKADDR *)&clientaddr, &addrlen);
         if (client_sock == INVALID_SOCKET) {
@@ -211,9 +227,24 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 {
     SOCKET client_sock = (SOCKET)arg;
     int retval;
+    int nameval;
+
+    char Name[NAMESIZE];
+    char msg[BUFSIZE];
+
     SOCKADDR_IN clientaddr;
     int addrlen;
-    char buf[BUFSIZE + 1]; // 데이터 송수신 버퍼
+
+    time_t timer;
+    struct tm* t;
+    timer = time(NULL); // 현재까지의 시간
+    t = localtime(&timer); // 구조체
+
+    int hour;
+    int min;
+
+    hour = t->tm_hour;
+    min = t->tm_min;
 
     // 클라이언트 정보 얻기
     addrlen = sizeof(clientaddr);
@@ -221,7 +252,8 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 
     while (1) {
         // 데이터 받기
-        retval = recv(client_sock, buf, BUFSIZE, 0);
+        nameval = recv(client_sock, Name, NAMESIZE, 0);
+        retval = recv(client_sock, msg, BUFSIZE , 0);
         if (retval == SOCKET_ERROR) {
             err_display("recv()");
             break;
@@ -230,12 +262,13 @@ DWORD WINAPI ProcessClient(LPVOID arg)
             break;
 
         // 받은 데이터 출력
-        buf[retval] = '\0';
-        DisplayText("[TCP/%s:%d] %s\r\n", inet_ntoa(clientaddr.sin_addr),
-            ntohs(clientaddr.sin_port), buf);
+        Name[nameval] = '\0';
+        msg[retval] = '\0';
+        DisplayText("[%d:%d][%s]:%s\r\n", hour, min, Name, msg);
 
         // 데이터 보내기
-        retval = send(client_sock, buf, retval, 0);
+        nameval = send(client_sock, Name, nameval, 0);
+        retval = send(client_sock, msg, retval, 0);
         if (retval == SOCKET_ERROR) {
             err_display("send()");
             break;

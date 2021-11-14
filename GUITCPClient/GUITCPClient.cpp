@@ -7,11 +7,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <tchar.h>
+#include <time.h>
+#include <iostream>
+#include <string>
 #include "resource.h"
 
-#define SERVERIP   "192.168.0.7"
+#define SERVERIP   "192.168.0.6"
 #define SERVERPORT 9000
-#define BUFSIZE    512
+#define BUFSIZE    4096
+#define NAMESIZE 20
+
 
 // 대화상자 프로시저
 BOOL CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM); // 채팅 화면 프로시저 생성
@@ -29,11 +34,16 @@ int recvn(SOCKET s, char *buf, int len, int flags);
 DWORD WINAPI ClientMain(LPVOID arg);
 
 SOCKET sock; // 소켓
-char buf[BUFSIZE + 1]; // 데이터 송수신 버퍼
 HANDLE hReadEvent, hWriteEvent; // 이벤트
+
 HWND hSendButton; // 보내기 버튼
 HWND hEdit1, hEdit2; // 편집 컨트롤
+HWND hName; // 이름 상자 컨트롤
+
 HWND hWnd; // 윈도우 프로시저
+
+char Name[NAMESIZE];
+char msg[BUFSIZE];
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLine, int nCmdShow)
@@ -72,10 +82,12 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     switch (uMsg) {
     case WM_INITDIALOG:
-        hEdit1 = GetDlgItem(hDlg, IDC_EDIT1);
-        hEdit2 = GetDlgItem(hDlg, IDC_EDIT2);
+        hEdit1 = GetDlgItem(hDlg, IDC_EDIT1); // 입력 창
+        hEdit2 = GetDlgItem(hDlg, IDC_EDIT2); // 출력 창 
+        hName = GetDlgItem(hDlg, IDC_EDIT3); // 이름 창 
         hSendButton = GetDlgItem(hDlg, IDOK);
         SendMessage(hEdit1, EM_SETLIMITTEXT, BUFSIZE, 0);
+        SendMessage(hName, EM_SETLIMITTEXT, NAMESIZE, 0);
         return TRUE;
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
@@ -84,10 +96,15 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             EnableWindow(hSendButton, FALSE); // 보내기 버튼 비활성화
             WaitForSingleObject(hReadEvent, INFINITE); // 읽기 완료 기다리기
-            GetDlgItemText(hDlg, IDC_EDIT1, buf, BUFSIZE + 1);
+
+            GetDlgItemText(hDlg, IDC_EDIT1, msg, BUFSIZE);
+            GetDlgItemText(hDlg, IDC_EDIT3, Name, NAMESIZE);
+
             SetEvent(hWriteEvent); // 쓰기 완료 알리기
             SetFocus(hEdit1);
             SendMessage(hEdit1, EM_SETSEL, 0, -1);
+            SetDlgItemText(hDlg, IDC_EDIT1, "");
+
             return TRUE;
 
         case IDCANCEL:
@@ -186,6 +203,18 @@ int recvn(SOCKET s, char *buf, int len, int flags)
 DWORD WINAPI ClientMain(LPVOID arg)
 {
     int retval;
+    int nameval;
+
+    time_t timer;
+    struct tm* t;
+    timer = time(NULL); // 현재까지의 시간
+    t = localtime(&timer); // 구조체
+
+    int hour;
+    int min;
+
+    hour = t->tm_hour;
+    min = t->tm_min;
 
     // 윈속 초기화
     WSADATA wsa;
@@ -201,21 +230,22 @@ DWORD WINAPI ClientMain(LPVOID arg)
         WaitForSingleObject(hWriteEvent, INFINITE); // 쓰기 완료 기다리기
 
         // 문자열 길이가 0이면 보내지 않음
-        if (strlen(buf) == 0) {
+        if (strlen(msg) == 0) {
             EnableWindow(hSendButton, TRUE); // 보내기 버튼 활성화
             SetEvent(hReadEvent); // 읽기 완료 알리기
             continue;
         }
-
         // 데이터 보내기
-        retval = send(sock, buf, strlen(buf), 0);
+        nameval = send(sock, Name, strlen(Name), 0);
+        retval = send(sock, msg, strlen(msg), 0);
         if (retval == SOCKET_ERROR) {
             err_display("send()");
             break;
         }
 
         // 데이터 받기
-        retval = recvn(sock, buf, retval, 0);
+        nameval = recvn(sock, Name, nameval, 0);
+        retval = recvn(sock, msg, retval, 0);
         if (retval == SOCKET_ERROR) {
             err_display("recv()");
             break;
@@ -224,8 +254,9 @@ DWORD WINAPI ClientMain(LPVOID arg)
             break;
 
         // 받은 데이터 출력
-        buf[retval] = '\0';
-        DisplayText("[받은 데이터] %s\r\n", buf);
+        Name[nameval] = '\0';
+        msg[retval] = '\0';
+        DisplayText("[%d:%d][%s]:%s\r\n" , hour, min , Name ,msg);
 
         EnableWindow(hSendButton, TRUE); // 보내기 버튼 활성화
         SetEvent(hReadEvent); // 읽기 완료 알리기
@@ -233,3 +264,4 @@ DWORD WINAPI ClientMain(LPVOID arg)
 
     return 0;
 }
+
