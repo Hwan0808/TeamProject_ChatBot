@@ -96,7 +96,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return FALSE;
 }
 
-// 편집 컨트롤 출력 함수
+// 에디트 컨트롤 출력 함수
 void DisplayText(char *fmt, ...)
 {
     va_list arg;
@@ -109,6 +109,24 @@ void DisplayText(char *fmt, ...)
     int nLength = GetWindowTextLength(hEdit);
     SendMessage(hEdit, EM_SETSEL, nLength, nLength);
     SendMessage(hEdit, EM_REPLACESEL, FALSE, (LPARAM)cbuf);
+    LeaveCriticalSection(&cs);
+
+    va_end(arg);
+}
+
+// 리스트 컨트롤 출력 함수 
+void DisplayList(char* fmt, ...)
+{
+    va_list arg;
+    va_start(arg, fmt);
+
+    char cbuf[BUFSIZE + 256];
+    vsprintf(cbuf, fmt, arg);
+
+    EnterCriticalSection(&cs);
+    int nLength = GetWindowTextLength(iEdit);
+    SendMessage(iEdit, EM_SETSEL, nLength, nLength);
+    SendMessage(iEdit, EM_REPLACESEL, FALSE, (LPARAM)cbuf);
     LeaveCriticalSection(&cs);
 
     va_end(arg);
@@ -210,8 +228,11 @@ DWORD WINAPI ServerMain(LPVOID arg)
         // 스레드 생성
         hThread = CreateThread(NULL, 0, ProcessClient,
             (LPVOID)client_sock, 0, NULL);
-        if (hThread == NULL) { closesocket(client_sock); }
-        else { CloseHandle(hThread); }
+        if (hThread == NULL) { closesocket(client_sock);
+        }
+        else { CloseHandle(hThread); 
+        DisplayList("[%s]:%s\r\n","클라이언트","1번");
+        }
     }
 
     // closesocket()

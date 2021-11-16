@@ -12,7 +12,7 @@
 #include <string>
 #include "resource.h"
 
-#define SERVERIP   "192.168.0.6"
+#define SERVERIP   "192.168.0.7"
 #define SERVERPORT 9000
 #define BUFSIZE    4096
 #define NAMESIZE 20
@@ -88,6 +88,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
         hSendButton = GetDlgItem(hDlg, IDOK);
         SendMessage(hEdit1, EM_SETLIMITTEXT, BUFSIZE, 0);
         SendMessage(hName, EM_SETLIMITTEXT, NAMESIZE, 0);
+        
         return TRUE;
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
@@ -205,15 +206,15 @@ DWORD WINAPI ClientMain(LPVOID arg)
     int retval;
     int nameval;
 
-    time_t timer;
-    struct tm* t;
-    timer = time(NULL); // 현재까지의 시간
-    t = localtime(&timer); // 구조체
+    time_t timer; // 시간 표현
+    struct tm* t; // 구조체 선언
+    timer = time(NULL); // 현재까지의 시간 입력
+    t = localtime(&timer); 
 
-    int hour;
-    int min;
+    int hour; // 시간
+    int min; // 분
 
-    hour = t->tm_hour;
+    hour = t->tm_hour; 
     min = t->tm_min;
 
     // 윈속 초기화
