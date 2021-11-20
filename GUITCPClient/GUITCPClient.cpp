@@ -12,14 +12,16 @@
 #include <string>
 #include "resource.h"
 
-#define SERVERIP   "192.168.0.7"
+#define SERVERIP "192.168.0.7"
 #define SERVERPORT 9000
-#define BUFSIZE    4096
+#define BUFSIZE 4096
 #define NAMESIZE 20
 
+// 아이콘
+HICON hIconS, hIconB;
 
 // 대화상자 프로시저
-BOOL CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM); // 채팅 화면 프로시저 생성
+BOOL CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM);
 
 LPTSTR lpszClass = _T("BasicApi");
 
@@ -45,9 +47,45 @@ HWND hWnd; // 윈도우 프로시저
 char Name[NAMESIZE];
 char msg[BUFSIZE];
 
+int Time_Hour() { // 시간 설정 함수 (Hour)
+
+    time_t timer;
+    struct tm* t;
+    timer = time(NULL); 
+    t = localtime(&timer); 
+
+    int hour;
+    return hour = t->tm_hour;
+}
+
+int Time_Min() { // 시간 설정 함수 (Min)
+
+    time_t timer;
+    struct tm* t;
+    timer = time(NULL); 
+    t = localtime(&timer); 
+
+    int min;
+    return min = t->tm_min;
+}
+
+void PlaceInCenterOfScreen(HWND hDlg) // 윈도우 좌표 설정 함수
+{
+    RECT rect;
+
+    GetWindowRect(hDlg, &rect);
+    SetWindowPos(hDlg, NULL,
+
+    (GetSystemMetrics(SM_CXSCREEN) - rect.right + rect.left) / 2,
+    (GetSystemMetrics(SM_CYSCREEN) - rect.bottom + rect.top) / 2, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLine, int nCmdShow)
 {
+
+    hIconS = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_ICON_SMALL), IMAGE_ICON, 16, 16, LR_DEFAULTSIZE);
+    hIconB = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_ICON_BIG), IMAGE_ICON, 16, 16, LR_DEFAULTSIZE);
 
     // 이벤트 생성
     hReadEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
@@ -81,15 +119,20 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
     int retval;
 
     switch (uMsg) {
+
     case WM_INITDIALOG:
+        PlaceInCenterOfScreen(hDlg);
         hEdit1 = GetDlgItem(hDlg, IDC_EDIT1); // 입력 창
         hEdit2 = GetDlgItem(hDlg, IDC_EDIT2); // 출력 창 
         hName = GetDlgItem(hDlg, IDC_EDIT3); // 이름 창 
         hSendButton = GetDlgItem(hDlg, IDOK);
         SendMessage(hEdit1, EM_SETLIMITTEXT, BUFSIZE, 0);
         SendMessage(hName, EM_SETLIMITTEXT, NAMESIZE, 0);
-        
+        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
+        SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
+
         return TRUE;
+
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
 
@@ -112,9 +155,8 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             Return = MessageBox(hWnd, _T("종료하시겠습니까?"), _T("확인"), MB_YESNO);
             if (Return == IDYES) {
-                DestroyWindow(hDlg);
-                closesocket(sock);
-                WSACleanup();
+                EndDialog(hDlg,IDCANCEL);
+                break;
             }
             else {
                 return 0;
@@ -131,6 +173,7 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             if (retval == SOCKET_ERROR) {
                 err_quit("connect()");
+                break;
             }
             else {
                 Return = MessageBox(hWnd, _T("서버 접속 완료."), _T("확인"), MB_OK);
@@ -206,17 +249,6 @@ DWORD WINAPI ClientMain(LPVOID arg)
     int retval;
     int nameval;
 
-    time_t timer; // 시간 표현
-    struct tm* t; // 구조체 선언
-    timer = time(NULL); // 현재까지의 시간 입력
-    t = localtime(&timer); 
-
-    int hour; // 시간
-    int min; // 분
-
-    hour = t->tm_hour; 
-    min = t->tm_min;
-
     // 윈속 초기화
     WSADATA wsa;
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
@@ -236,6 +268,7 @@ DWORD WINAPI ClientMain(LPVOID arg)
             SetEvent(hReadEvent); // 읽기 완료 알리기
             continue;
         }
+
         // 데이터 보내기
         nameval = send(sock, Name, strlen(Name), 0);
         retval = send(sock, msg, strlen(msg), 0);
@@ -257,7 +290,7 @@ DWORD WINAPI ClientMain(LPVOID arg)
         // 받은 데이터 출력
         Name[nameval] = '\0';
         msg[retval] = '\0';
-        DisplayText("[%d:%d][%s]:%s\r\n" , hour, min , Name ,msg);
+        DisplayText("[%d:%d][%s]:%s\r\n" , Time_Hour(), Time_Min() , Name ,msg);
 
         EnableWindow(hSendButton, TRUE); // 보내기 버튼 활성화
         SetEvent(hReadEvent); // 읽기 완료 알리기

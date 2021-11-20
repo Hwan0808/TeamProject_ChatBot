@@ -4,9 +4,14 @@
 //
 #define IDCANCEL2                       3
 #define IDD_DIALOG1                     101
+#define IDI_ICON_PROG                   101
+#define IDI_ICON_SMALL                  102
+#define IDI_ICON_BIG                    103
 #define IDC_SERVER_STATIC               1002
+#define IDC_SERVER_STATIC1              1002
 #define IDC_SERVER_STATIC2              1003
 #define IDD_SERVER_DIALOG1              1004
+#define IDC_SERVER_STATIC3              1004
 #define IDC_LIST                        1005
 #define IDC_EDIT1                       1006
 #define IDC_EDIT2                       1007

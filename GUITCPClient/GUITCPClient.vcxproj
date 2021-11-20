@@ -85,6 +85,11 @@
   <ItemGroup>
     <ResourceCompile Include="GUITCPClient.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="chat_down.ico" />
+    <Image Include="chat_my.ico" />
+    <Image Include="chat_up.ico" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
