@@ -9,13 +9,12 @@
 #include <time.h>
 #include <iostream>
 #include <string>
-#include <vector>
-
 #include "resource.h"
 
 #define SERVERPORT 9000
 #define BUFSIZE 4096
 #define NAMESIZE 20
+#define MAXCLNT 256
 
 // 대화상자 프로시저
 BOOL CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM);
@@ -32,38 +31,36 @@ DWORD WINAPI ProcessClient(LPVOID arg);
 
 HINSTANCE hInst; // 인스턴스 핸들
 HANDLE hReadEvent, hWriteEvent; // 이벤트
-HWND hEdit; // 에디트 박스 편집 컨트롤 (왼쪽)
-HWND iEdit; // 에디트 박스 편집 컨트롤 (오른쪽)
-HWND User_cnt; // 사용자 접속 수
+HWND hEdit; // 에디트 박스 편집 컨트롤 (채팅)
+HWND iEdit; // 리스트 박스 편집 컨트롤 (클라이언트)
 
-HWND hEndButton; // 보내기 버튼
 CRITICAL_SECTION cs; // 임계 영역
 HWND hWnd; // 윈도우 프로시저
+HICON hIconS, hIconB; // 아이콘
+
+char Name[NAMESIZE] = { "사용자" };
+char msg[BUFSIZE];
 
 int cnt = 0;
 
-HICON hIconS, hIconB;
-
 int Time_Hour() { // 시간 출력 함수 (Hour)
 
-    time_t timer;
-    struct tm* t;
-    timer = time(NULL);
-    t = localtime(&timer); 
+    time_t curr_time;
+    struct tm* curr_tm;
+    curr_time = time(NULL);
+    curr_tm = localtime(&curr_time);
 
-    int hour;
-    return hour = t->tm_hour;
+    return curr_tm->tm_hour;
 }
 
 int Time_Min() { // 시간 출력 함수 (Min)
 
-    time_t timer;
-    struct tm* t;
-    timer = time(NULL); 
-    t = localtime(&timer); 
+    time_t curr_time;
+    struct tm* curr_tm;
+    curr_time = time(NULL);
+    curr_tm = localtime(&curr_time);
 
-    int min;
-    return min = t->tm_min;
+    return curr_tm->tm_min;
 }
 
 void PlaceInCenterOfScreen(HWND hDlg) // 윈도우 좌표 설정 함수
@@ -117,13 +114,10 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_INITDIALOG:
         PlaceInCenterOfScreen(hDlg);
         hEdit = GetDlgItem(hDlg, IDC_EDIT1);
-        iEdit = GetDlgItem(hDlg, IDC_EDIT2);
-        User_cnt = GetDlgItem(hDlg, IDC_SERVER_STATIC3);
-        SetDlgItemText(hDlg, IDC_SERVER_STATIC3, (LPCSTR)"0");
+        iEdit = GetDlgItem(hDlg, IDC_LIST1);
         SendMessage(hEdit, EM_SETLIMITTEXT, BUFSIZE, 0);
         SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
         SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
-
         return TRUE;
 
     case WM_DESTROY:
@@ -133,7 +127,13 @@ BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
 
+        case IDABORT:
+
+            return TRUE;
+            break;
+  
         case IDCANCEL:
+            
             Return = MessageBox(hWnd, _T("종료하시겠습니까?"), _T("확인"), MB_YESNO);
             if (Return == IDYES) {
                 DestroyWindow(hDlg);
@@ -214,7 +214,7 @@ DWORD WINAPI ServerMain(LPVOID arg)
     serveraddr.sin_family = AF_INET;
     serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
     serveraddr.sin_port = htons(SERVERPORT);
-    retval = bind(listen_sock, (SOCKADDR *)&serveraddr, sizeof(serveraddr));
+    retval = bind(listen_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
     if (retval == SOCKET_ERROR) err_quit("bind()");
 
     // listen()
@@ -227,12 +227,11 @@ DWORD WINAPI ServerMain(LPVOID arg)
     int addrlen;
     HANDLE hThread;
 
-
     while (1) {
         // accept()
-        
+
         addrlen = sizeof(clientaddr);
-        client_sock = accept(listen_sock, (SOCKADDR *)&clientaddr, &addrlen);
+        client_sock = accept(listen_sock, (SOCKADDR*)&clientaddr, &addrlen);
         if (client_sock == INVALID_SOCKET) {
             err_display("accept()");
             break;
@@ -241,13 +240,17 @@ DWORD WINAPI ServerMain(LPVOID arg)
         // 접속한 클라이언트 정보 출력
         DisplayText("[TCP 서버] 새로운 사용자가 접속했습니다. IP 주소=%s, 포트 번호=%d\r\n",
             inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
-            
+
+        SendMessage(iEdit, LB_ADDSTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
+
         // 스레드 생성
-        hThread = CreateThread(NULL, 0, ProcessClient,
-            (LPVOID)client_sock, 0, NULL);
-        if (hThread == NULL) { closesocket(client_sock);
+        hThread = CreateThread(NULL, 0, ProcessClient, (LPVOID)client_sock, 0, NULL);
+
+        if (hThread == NULL) {
+            closesocket(client_sock);
         }
-        else { CloseHandle(hThread); 
+        else {
+            CloseHandle(hThread);
         }
     }
 
@@ -266,9 +269,6 @@ DWORD WINAPI ProcessClient(LPVOID arg)
     int nameval;
     int retval;
 
-    char Name[NAMESIZE];
-    char msg[BUFSIZE];
-
     SOCKADDR_IN clientaddr;
     int addrlen;
 
@@ -277,6 +277,7 @@ DWORD WINAPI ProcessClient(LPVOID arg)
     getpeername(client_sock, (SOCKADDR *)&clientaddr, &addrlen);
 
     while (1) {
+        
         // 데이터 받기
         nameval = recv(client_sock, Name, NAMESIZE, 0);
         retval = recv(client_sock, msg, BUFSIZE , 0);
@@ -286,11 +287,12 @@ DWORD WINAPI ProcessClient(LPVOID arg)
         }
         else if (retval == 0)
             break;
-
+        
         // 받은 데이터 출력
         Name[nameval] = '\0';
         msg[retval] = '\0';
         DisplayText("[%d:%d][%s]:%s\r\n", Time_Hour(), Time_Min(), Name, msg);
+
 
         // 데이터 보내기
         nameval = send(client_sock, Name, nameval, 0);
@@ -299,11 +301,12 @@ DWORD WINAPI ProcessClient(LPVOID arg)
             err_display("send()");
             break;
         }
+                
     }
-
     // closesocket()
+    SendMessage(iEdit, LB_DELETESTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
     closesocket(client_sock);
-    DisplayText("[TCP 서버] %s 님이 나가셨습니다. IP 주소=%s, 포트 번호=%d\r\n", Name,
+    DisplayText("[TCP 서버] %s님이 나가셨습니다. IP 주소=%s, 포트 번호=%d\r\n", Name,
         inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
 
     return 0;

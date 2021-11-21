@@ -47,26 +47,24 @@ HWND hWnd; // 윈도우 프로시저
 char Name[NAMESIZE];
 char msg[BUFSIZE];
 
-int Time_Hour() { // 시간 설정 함수 (Hour)
+int Time_Hour() { // 시간 출력 함수 (Hour)
 
-    time_t timer;
-    struct tm* t;
-    timer = time(NULL); 
-    t = localtime(&timer); 
+    time_t curr_time;
+    struct tm* curr_tm;
+    curr_time = time(NULL);
+    curr_tm = localtime(&curr_time);
 
-    int hour;
-    return hour = t->tm_hour;
+    return curr_tm->tm_hour;
 }
 
-int Time_Min() { // 시간 설정 함수 (Min)
+int Time_Min() { // 시간 출력 함수 (Min)
 
-    time_t timer;
-    struct tm* t;
-    timer = time(NULL); 
-    t = localtime(&timer); 
+    time_t curr_time;
+    struct tm* curr_tm;
+    curr_time = time(NULL);
+    curr_tm = localtime(&curr_time);
 
-    int min;
-    return min = t->tm_min;
+    return curr_tm->tm_min;
 }
 
 void PlaceInCenterOfScreen(HWND hDlg) // 윈도우 좌표 설정 함수
