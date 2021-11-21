@@ -23,7 +23,7 @@
 
 <h3>Bug Fix</h3> 
 
-- 콘솔 아이콘 추가 
+- 콘솔 아이콘 추가 <img src="https://user-images.githubusercontent.com/57865037/142768687-77db8cf3-7465-43f4-bdd8-90a11fccea09.png" width=20 height=20>
 - 최소화/최대화 트레이 아이콘 추가
 - 윈도우 화면 상에 가운데에서 콘솔 창이 열리도록 수정. (버튼 팝업 창도 가운데에서 열림)
 - 정적 텍스트를 지우고 클라이언트 리스트를 추가
