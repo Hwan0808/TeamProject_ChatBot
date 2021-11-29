@@ -13,7 +13,7 @@
 #include <process.h>
 #include "resource.h"
 
-#define SERVERIP "192.168.0.7"
+#define SERVERIP "221.139.96.157"
 #define SERVERPORT 9000
 
 SOCKET client_sock = NULL;
