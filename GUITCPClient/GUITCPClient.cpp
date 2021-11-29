@@ -9,43 +9,46 @@
 #include <tchar.h>
 #include <time.h>
 #include <iostream>
-#include <string>
+#include <string.h>
+#include <process.h>
 #include "resource.h"
 
 #define SERVERIP "192.168.0.7"
 #define SERVERPORT 9000
-#define BUFSIZE 4096
-#define NAMESIZE 20
 
-// 아이콘
-HICON hIconS, hIconB;
+SOCKET client_sock = NULL;
+HWND hwndName;
+HWND hwndSend;
+HWND hwndEdit1;
+HWND hwndEdit2;
+HWND hWnd;
+HWND hWndFocus;
 
-// 대화상자 프로시저
-BOOL CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM);
+char Name[25];
+char NameStr[256];
+char str[128];
+BOOL SEND = FALSE;
 
-LPTSTR lpszClass = _T("BasicApi");
+HICON hIconS, hIconB; // CHAT 아이콘
 
-// 편집 컨트롤 출력 함수
-void DisplayText(char *fmt, ...);
+HANDLE hThread1, hThread2;
+DWORD dwThreadID1, dwThreadID2;
+
+unsigned int __stdcall SendMsg(void* arg); // 메시지 전송 함수
+unsigned int __stdcall RecvMsg(void* arg); // 메시지 수신 함수
+BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM IParam); // 메시지 처리 함수
+LPTSTR lpszClass = _T("BasicApi"); // 글자 변환 함수
+
+void AddStringToEdit(char* fmt, ...);
+void OnClose(HWND hWnd); // 대화상자 종료 함수
+void OnCommand(HWND hWnd, WPARAM wParam);
+void OnDisConnect(HWND hwnd);
+void OnSend(HWND hwnd);
+void OnConnect(HWND hwnd);
+BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam);
+
 // 오류 출력 함수
 void err_quit(char *msg);
-void err_display(char *msg);
-// 사용자 정의 데이터 수신 함수
-int recvn(SOCKET s, char *buf, int len, int flags);
-// 소켓 통신 스레드 함수
-DWORD WINAPI ClientMain(LPVOID arg);
-
-SOCKET sock; // 소켓
-HANDLE hReadEvent, hWriteEvent; // 이벤트
-
-HWND hSendButton; // 보내기 버튼
-HWND hEdit1, hEdit2; // 편집 컨트롤
-HWND hName; // 이름 상자 컨트롤
-
-HWND hWnd; // 윈도우 프로시저
-
-char Name[NAMESIZE];
-char msg[BUFSIZE];
 
 int Time_Hour() { // 시간 출력 함수 (Hour)
 
@@ -67,138 +70,189 @@ int Time_Min() { // 시간 출력 함수 (Min)
     return curr_tm->tm_min;
 }
 
-void PlaceInCenterOfScreen(HWND hDlg) // 윈도우 좌표 설정 함수
-{
-    RECT rect;
-
-    GetWindowRect(hDlg, &rect);
-    SetWindowPos(hDlg, NULL,
-
-    (GetSystemMetrics(SM_CXSCREEN) - rect.right + rect.left) / 2,
-    (GetSystemMetrics(SM_CYSCREEN) - rect.bottom + rect.top) / 2, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-}
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine, int nCmdShow)
+    LPSTR lpCmdLind, int nCmdShow)
 {
-
     hIconS = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_ICON_SMALL), IMAGE_ICON, 16, 16, LR_DEFAULTSIZE);
     hIconB = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_ICON_BIG), IMAGE_ICON, 16, 16, LR_DEFAULTSIZE);
 
-    // 이벤트 생성
-    hReadEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
-    if (hReadEvent == NULL) return 1;
-    hWriteEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    if (hWriteEvent == NULL) return 1;
-
-    // 소켓 통신 스레드 생성
-    CreateThread(NULL, 0, ClientMain, NULL, 0, NULL);
+    // 윈속 초기화
+    WSADATA wsa;
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+        return 1;
 
     // 대화상자 생성
     DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), NULL, DlgProc); // 채팅 화면
 
-    // 이벤트 제거
-    CloseHandle(hReadEvent);
-    CloseHandle(hWriteEvent);
-
-    // closesocket()
-    closesocket(sock);
-
     // 윈속 종료
     WSACleanup();
-    
     return 0;
 }
 
 // 클라이언트 채팅 화면
-BOOL CALLBACK DlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    int Return;
-    int retval;
-
     switch (uMsg) {
 
     case WM_INITDIALOG:
-        PlaceInCenterOfScreen(hDlg);
-        hEdit1 = GetDlgItem(hDlg, IDC_EDIT1); // 입력 창
-        hEdit2 = GetDlgItem(hDlg, IDC_EDIT2); // 출력 창 
-        hName = GetDlgItem(hDlg, IDC_EDIT3); // 이름 창 
-        hSendButton = GetDlgItem(hDlg, IDOK);
-        SendMessage(hEdit1, EM_SETLIMITTEXT, BUFSIZE, 0);
-        SendMessage(hName, EM_SETLIMITTEXT, NAMESIZE, 0);
-        SendMessage(hDlg, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
-        SendMessage(hDlg, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
 
-        return TRUE;
+        OnInitDialog(hWnd, hWnd, lParam);
+        SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
+        SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
 
     case WM_COMMAND:
-        switch (LOWORD(wParam)) {
 
-        case IDOK:
+        OnCommand(hWnd, wParam); return TRUE;
 
-            EnableWindow(hSendButton, FALSE); // 보내기 버튼 비활성화
-            WaitForSingleObject(hReadEvent, INFINITE); // 읽기 완료 기다리기
-
-            GetDlgItemText(hDlg, IDC_EDIT1, msg, BUFSIZE);
-            GetDlgItemText(hDlg, IDC_EDIT3, Name, NAMESIZE);
-
-            SetEvent(hWriteEvent); // 쓰기 완료 알리기
-            SetFocus(hEdit1);
-            SendMessage(hEdit1, EM_SETSEL, 0, -1);
-            SetDlgItemText(hDlg, IDC_EDIT1, "");
-
-            return TRUE;
-
-        case IDCANCEL:
-
-            Return = MessageBox(hWnd, _T("종료하시겠습니까?"), _T("확인"), MB_YESNO);
-            if (Return == IDYES) {
-                EndDialog(hDlg,IDCANCEL);
-                break;
-            }
-            else {
-                return 0;
-            }
-
-        case IDCONNECT:
-
-            SOCKADDR_IN serveraddr;
-            ZeroMemory(&serveraddr, sizeof(serveraddr));
-            serveraddr.sin_family = AF_INET;
-            serveraddr.sin_addr.s_addr = inet_addr(SERVERIP);
-            serveraddr.sin_port = htons(SERVERPORT);
-            retval = connect(sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
-
-            if (retval == SOCKET_ERROR) {
-                err_quit("connect()");
-                break;
-            }
-            else {
-                Return = MessageBox(hWnd, _T("서버 접속 완료."), _T("확인"), MB_OK);
-                DisplayText("[채팅 서버] ");
-                DisplayText("서버 IP 주소=%s, 포트 번호=%d\r\n",inet_ntoa(serveraddr.sin_addr), ntohs(serveraddr.sin_port));
-            }
+    case WM_CLOSE:
+        
+        OnClose(hWnd);
 
         }
         return FALSE;
-    }
-    return FALSE;
 }
 
-// 편집 컨트롤 출력 함수
-void DisplayText(char *fmt, ...)
+void OnCommand(HWND hwnd, WPARAM wParam)
+{
+    switch (LOWORD(wParam))
+    {
+    case IDC_CONNECT:
+
+        OnConnect(hwnd);
+        break;
+
+    case IDC_EXIT:
+
+        OnDisConnect(hwnd);
+        break;
+
+    case IDC_SEND:
+
+        OnSend(hwnd);
+        break;
+
+    }
+
+}
+
+void OnClose(HWND hWnd)
+{
+    int retval;
+
+    retval = MessageBox(hWnd, _T("종료하시겠습니까?"), _T("서버 종료"), MB_ICONQUESTION | MB_YESNO);
+    if (retval == IDYES) {
+        EndDialog(hWnd, 0);
+    }
+}
+
+void AddStringToEdit(char* fmt, ...)
 {
     va_list arg;
     va_start(arg, fmt);
 
-    char cbuf[BUFSIZE + 256];
+    char cbuf[256];
     vsprintf(cbuf, fmt, arg);
 
-    int nLength = GetWindowTextLength(hEdit2);
-    SendMessage(hEdit2, EM_SETSEL, nLength, nLength);
-    SendMessage(hEdit2, EM_REPLACESEL, FALSE, (LPARAM)cbuf);
+    int nLength = GetWindowTextLength(hwndEdit2);
+    SendMessage(hwndEdit2, EM_SETSEL, nLength, nLength);
+    SendMessage(hwndEdit2, EM_REPLACESEL, FALSE, (LPARAM)cbuf);
 
     va_end(arg);
+}
+
+BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
+{
+    hwndName = GetDlgItem(hWnd, IDC_ID);
+    hwndEdit1 = GetDlgItem(hWnd, IDC_CHATEDIT);
+    hwndEdit2 = GetDlgItem(hWnd, IDC_CHATVIEW);
+
+    AddStringToEdit("[TCP 클라이언트] 서버 접속 버튼을 누르세요.\r\n");
+    return TRUE;
+}
+
+void OnConnect(HWND hwnd)
+{
+    int retval;
+
+    // socket()
+    client_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (client_sock == INVALID_SOCKET) err_quit("socket()");
+
+    SOCKADDR_IN serveraddr;
+    ZeroMemory(&serveraddr, sizeof(serveraddr));
+    serveraddr.sin_family = AF_INET;
+    serveraddr.sin_addr.s_addr = inet_addr(SERVERIP);
+    serveraddr.sin_port = htons(SERVERPORT);
+
+    // connect()
+    retval = connect(client_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
+    if (retval == SOCKET_ERROR) {
+        err_quit("connect()");
+    }
+    else {
+        SetDlgItemText(hwnd, IDC_CHATVIEW, "");
+        MessageBox(hWnd, _T("서버 접속 완료"), _T("서버 접속"), MB_ICONINFORMATION | MB_OK);
+        AddStringToEdit("[TCP 클라이언트] 채팅 서버에 접속 되었습니다.\r\n");
+    }
+
+    hThread1 = (HANDLE)_beginthreadex(NULL, 0, SendMsg, (void*)client_sock, 0, (unsigned*)&dwThreadID1);
+    hThread2 = (HANDLE)_beginthreadex(NULL, 0, RecvMsg, (void*)client_sock, 0, (unsigned*)&dwThreadID2);
+
+}
+
+void OnDisConnect(HWND hwnd)
+{
+    SetDlgItemText(hwnd, IDC_CHATVIEW, "");
+    closesocket(client_sock);
+    MessageBox(hWnd, _T("서버 접속 종료"), _T("접속 종료"), MB_ICONINFORMATION | MB_OK);
+    AddStringToEdit("[TCP 클라이언트] 채팅 서버와 연결이 끊어졌습니다.\r\n");
+}
+
+void OnSend(HWND hwnd)
+{
+    GetDlgItemText(hwnd, IDC_ID, Name, 25);
+    GetDlgItemText(hwnd, IDC_CHATEDIT, str, sizeof(str));
+
+    SetDlgItemText(hwnd, IDC_CHATEDIT, "");
+    SetFocus(GetDlgItem(hwnd, IDC_CHATEDIT));
+
+    SEND = TRUE;
+}
+
+unsigned int __stdcall SendMsg(void* arg)
+{
+    while (true) 
+    {
+        if (SEND) {
+            sprintf(NameStr, "[%d:%d][%s]:%s \r\n",Time_Hour(), Time_Min(), Name, str);
+            send(client_sock, NameStr, (int)strlen(NameStr), 0);
+
+            SEND = FALSE;
+        }
+    }
+    return 0;
+}
+
+unsigned int __stdcall RecvMsg(void* arg)
+{
+    while (true)
+    {
+        int retval;
+        retval = recv(client_sock, NameStr, sizeof(NameStr) - 1, 0);
+        if (retval == -1) return 1;
+        NameStr[retval] = 0;
+
+        if (retval > 0) {
+            AddStringToEdit(NameStr);
+
+        }
+        else {
+            MessageBox(hWnd, _T("서버에 접속 되어 있지 않습니다."), _T("접속 종료"), MB_ICONERROR | MB_OK);
+            AddStringToEdit("[TCP 클라이언트] 서버에 접속 되어 있지 않습니다.\r\n");
+        }
+     
+    }
+    return 0;
 }
 
 // 소켓 함수 오류 출력 후 종료
@@ -207,93 +261,3 @@ void err_quit(char *msg)
     MessageBox(NULL, "채팅 서버 연결에 실패하였습니다. SERVER DISCONNET" , "클라이언트 종료", MB_ICONERROR);
     exit(1);
 }
-
-// 소켓 함수 오류 출력
-void err_display(char *msg)
-{
-    LPVOID lpMsgBuf;
-    FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-        NULL, WSAGetLastError(),
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR)&lpMsgBuf, 0, NULL);
-    DisplayText("[%s] %s", msg, (char *)lpMsgBuf);
-    LocalFree(lpMsgBuf);
-}
-
-// 사용자 정의 데이터 수신 함수
-int recvn(SOCKET s, char *buf, int len, int flags)
-{
-    int received;
-    char *ptr = buf;
-    int left = len;
-
-    while (left > 0) {
-        received = recv(s, ptr, left, flags);
-        if (received == SOCKET_ERROR)
-            return SOCKET_ERROR;
-        else if (received == 0)
-            break;
-        left -= received;
-        ptr += received;
-    }
-
-    return (len - left);
-}
-
-// TCP 클라이언트 시작 부분
-DWORD WINAPI ClientMain(LPVOID arg)
-{
-    int retval;
-    int nameval;
-
-    // 윈속 초기화
-    WSADATA wsa;
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
-        return 1;
-
-    // socket()
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock == INVALID_SOCKET) err_quit("socket()");
-
-    // 서버와 데이터 통신
-    while (1) {
-        WaitForSingleObject(hWriteEvent, INFINITE); // 쓰기 완료 기다리기
-
-        // 문자열 길이가 0이면 보내지 않음
-        if (strlen(msg) == 0) {
-            EnableWindow(hSendButton, TRUE); // 보내기 버튼 활성화
-            SetEvent(hReadEvent); // 읽기 완료 알리기
-            continue;
-        }
-
-        // 데이터 보내기
-        nameval = send(sock, Name, strlen(Name), 0);
-        retval = send(sock, msg, strlen(msg), 0);
-        if (retval == SOCKET_ERROR) {
-            err_display("send()");
-            break;
-        }
-
-        // 데이터 받기
-        nameval = recvn(sock, Name, nameval, 0);
-        retval = recvn(sock, msg, retval, 0);
-        if (retval == SOCKET_ERROR) {
-            err_display("recv()");
-            break;
-        }
-        else if (retval == 0)
-            break;
-
-        // 받은 데이터 출력
-        Name[nameval] = '\0';
-        msg[retval] = '\0';
-        DisplayText("[%d:%d][%s]:%s\r\n" , Time_Hour(), Time_Min() , Name ,msg);
-
-        EnableWindow(hSendButton, TRUE); // 보내기 버튼 활성화
-        SetEvent(hReadEvent); // 읽기 완료 알리기
-    }
-
-    return 0;
-}
-

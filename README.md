@@ -17,19 +17,18 @@
 - 클라이언트를 서버 관리자가 지정하여 강제로 접속 해제 할 수 있는 기능 추가
 - 클라이언트간의 채팅방 접속을 구현하고, 파일전송 기능 추가
 
-![image](https://user-images.githubusercontent.com/57865037/142768503-d1521166-d81a-4e27-a61d-b7cb49185b98.png)
+![image](https://user-images.githubusercontent.com/57865037/143832904-8e0aaac2-ebc1-44fc-ab61-f13bc6b4f006.png)
 
-![image](https://user-images.githubusercontent.com/57865037/142768573-d9a5cdf6-44d7-4ae8-a1bb-4173cde11872.png)
+![image](https://user-images.githubusercontent.com/57865037/143832926-7de60ec1-cd16-4257-a773-c607c985358a.png)
 
 <h3>Bug Fix</h3> 
 
-- 콘솔 아이콘 추가 <img src="https://user-images.githubusercontent.com/57865037/142768687-77db8cf3-7465-43f4-bdd8-90a11fccea09.png" width=20 height=20>
-- 최소화/최대화 트레이 아이콘 추가
-- 윈도우 화면 상에 가운데에서 콘솔 창이 열리도록 수정. (버튼 팝업 창도 가운데에서 열림)
-- 정적 텍스트를 지우고 클라이언트 리스트를 추가
+- 전체적인 코드 일괄 수정
+- 클라이언트간의 통신 가능
+- 원격 접속 문제 해결 (서버 담당: 이동건)
 
 <h3>To Do List</h3>
 
-- 현재 클라이언트간의 통신이 불가능 함. (개선사항)
-- DMZ 설정, 포트포워딩 설정을 해도 원격에서 접속이 되지 않음. (해결방법 필요)
-- 파일 전송기능은 향후 클라이언트 간의 통신이 가능한다 할지라도 채팅방기능을 구현하지 않는 이상 힘듬.
+- 서버에서 강제 내보내기 기능 추가
+- 파일 전송기능은 채팅방을 구현 하지 않으면 힘듬. 상대의 IP 주소를 알고있어야 가능함.
+- 서버 IP 주소가 바뀌면 수시로 디버깅을 해야하는 문제점이 있기 때문에 서버 접속 폼을 따로 추가해야함.
