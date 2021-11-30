@@ -19,57 +19,51 @@ SOCKET listen_sock = NULL;
 SOCKET client_sock = NULL;
 SOCKET clntSock[100];
 
-HWND hwndEdit = NULL;
+HWND hwndEdit; // 에디트 박스 편집 컨트롤 (채팅 화면)
+HWND hwndList; // 리스트 박스 편집 컨트롤 (클라이언트 리스트 항목)
+HICON hIconS, hIconB; // 아이콘
 
 SOCKADDR_IN serveraddr;
 SOCKADDR_IN clientaddr;
-HANDLE hThread1, hThread2;
-HANDLE hMutex;
-DWORD dwThreadID1, dwThreadID2;
+HANDLE Thread1, Thread2;
+HANDLE Mutex;
+DWORD ThreadID1, ThreadID2;
 
 int addrlen;
 int clntNum = 0;
 
-BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // 메시지 처리 함수 (다이얼로그)
-LPTSTR lpszClass = _T("BasicApi"); // 메시지 상자 텍스트 함수
+// 메시지 처리 함수 (다이얼로그)
+BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); 
 
-void AddStringToEdit(char* fmt, ...);
-void OnClose(HWND hWnd); // 대화상자 종료 함수
+// 메시지 상자 텍스트 함수
+LPTSTR lpszClass = _T("BasicApi"); 
+
+// 메시지 출력 함수
+void DisplayText(char* fmt, ...); 
+
+// 다이얼로그 메시지 처리 함수 
+void OnClose(HWND hWnd); 
 void OnCommand(HWND hwnd, WPARAM wParam);
 void OnDisConnect(HWND hwnd);
 
+// 다이얼로그 초기화
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam);
+
+// 스레드(main)
 unsigned int __stdcall ThreadMain(void* arg);
+
+// 메시지 전송 (send)
 void SendMsg(char* str, int len);
 
+// 클라이언트 데이터 통신
 DWORD WINAPI ProcessClient(void* arg);
-
-HWND hEdit; // 에디트 박스 편집 컨트롤 (채팅)
-HWND iEdit; // 리스트 박스 편집 컨트롤 (클라이언트)
-HICON hIconS, hIconB; // 아이콘
 
 // 오류 출력 함수
 void err_quit(char* msg);
 
-int Time_Hour() { // 시간 출력 함수 (Hour)
-
-    time_t curr_time;
-    struct tm* curr_tm;
-    curr_time = time(NULL);
-    curr_tm = localtime(&curr_time);
-
-    return curr_tm->tm_hour;
-}
-
-int Time_Min() { // 시간 출력 함수 (Min)
-
-    time_t curr_time;
-    struct tm* curr_tm;
-    curr_time = time(NULL);
-    curr_tm = localtime(&curr_time);
-
-    return curr_tm->tm_min;
-}
+// 시간 출력 함수
+int Time_Hour();
+int Time_Min();
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLine, int nCmdShow)
@@ -90,10 +84,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 unsigned int __stdcall ThreadMain(void* arg)
 {
+    int strlen = 0;
     char servermsg[256];
 
-    hMutex = CreateMutex(NULL, FALSE, NULL);
-    if (hMutex == NULL) {
+    Mutex = CreateMutex(NULL, FALSE, NULL);
+    if (Mutex == NULL) {
         err_quit("createmutex()");
     }
 
@@ -114,7 +109,7 @@ unsigned int __stdcall ThreadMain(void* arg)
     listen(listen_sock, SOMAXCONN);
     if (listen_sock == SOCKET_ERROR) err_quit("listen()");
 
-    AddStringToEdit("[TCP 서버] 사용자 접속 대기중 입니다.\r\n");
+    DisplayText("[TCP 서버] 사용자 접속 대기중 입니다.\r\n");
 
     while (true)
     {
@@ -122,22 +117,29 @@ unsigned int __stdcall ThreadMain(void* arg)
         addrlen = sizeof(clientaddr);
         client_sock = accept(listen_sock, (SOCKADDR*)&clientaddr, &addrlen);
 
-        WaitForSingleObject(hMutex, INFINITE);
+        WaitForSingleObject(Mutex, INFINITE);
         clntSock[clntNum++] = client_sock;
-        ReleaseMutex(hMutex);
-
+        ReleaseMutex(Mutex);
      
         // 접속한 클라이언트 출력
-        sprintf(servermsg, "[TCP 서버] 새로운 사용자가 접속했습니다.\r\n");
-        AddStringToEdit(servermsg);
-        SendMessage(iEdit, LB_ADDSTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
-        
+        for (int i = 0; i < clntNum; i++) {
+
+            if (client_sock == clntSock[i]) {
+
+                strlen = sprintf(servermsg, "[TCP 서버] 새로운 사용자가 접속했습니다.\r\n");
+                DisplayText(servermsg);
+                SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
+                SendMsg(servermsg, strlen);
+                
+            }
+
+        }
+
         // 쓰레드 생성
-        hThread1 = (HANDLE)_beginthreadex(NULL, 0, (unsigned int(__stdcall*)(void*))ProcessClient,
-            (void*)client_sock, 0, (unsigned*)&dwThreadID1);
+        Thread1 = (HANDLE)_beginthreadex(NULL, 0, (unsigned int(__stdcall*)(void*))ProcessClient,
+            (void*)client_sock, 0, (unsigned*)&ThreadID1);
 
     }
-
     closesocket(listen_sock);
     return 0; 
 
@@ -197,7 +199,7 @@ void OnClose(HWND hWnd)
     EndDialog(hWnd, 0);
 }
 
-void AddStringToEdit(char* fmt, ...)
+void DisplayText(char* fmt, ...)
 {
     va_list arg;
     va_start(arg, fmt);
@@ -215,9 +217,9 @@ void AddStringToEdit(char* fmt, ...)
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
 {
     hwndEdit = GetDlgItem(hWnd, IDC_EDIT1);
-    iEdit = GetDlgItem(hWnd, IDC_LIST1);
-    hThread2 = (HANDLE)_beginthreadex(NULL, 0, (unsigned int(__stdcall*)(void*))ThreadMain,
-        (void*)listen_sock, 0, (unsigned*)&dwThreadID2);
+    hwndList = GetDlgItem(hWnd, IDC_LIST1);
+    Thread2 = (HANDLE)_beginthreadex(NULL, 0, (unsigned int(__stdcall*)(void*))ThreadMain,
+        (void*)listen_sock, 0, (unsigned*)&ThreadID2);
 
     return TRUE;
 }
@@ -250,12 +252,20 @@ DWORD WINAPI ProcessClient(void* arg)
     {
         SendMsg(msg, strlen);
     }
-    WaitForSingleObject(hMutex, INFINITE);
+    WaitForSingleObject(Mutex, INFINITE);
 
     for (int i = 0; i < clntNum; i++) {
+        
+        if (clntNum == 0) {
+            continue;
+        }
+        
         if (temp == clntSock[i]) {
             strlen = sprintf(servermsg, "[TCP 서버] 사용자가 접속을 종료했습니다.\r\n");
-            AddStringToEdit(servermsg);
+
+            DisplayText(servermsg);
+
+            SendMsg(servermsg, strlen);
 
             for (; i < clntNum - 1; i++) 
                 clntSock[i] = clntSock[i + 1];
@@ -263,18 +273,37 @@ DWORD WINAPI ProcessClient(void* arg)
          
         }
     }
-    SendMsg(servermsg, strlen);
     clntNum--;
-    ReleaseMutex(hMutex);
+    ReleaseMutex(Mutex);
     closesocket(temp);
-    SendMessage(iEdit, LB_DELETESTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
+    SendMessage(hwndList, LB_DELETESTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
     return 0;
 }
 
 void SendMsg(char* str, int len) 
 {
-    WaitForSingleObject(hMutex, INFINITE);
+    WaitForSingleObject(Mutex, INFINITE);
     for (int i = 0; i < clntNum; i++) 
         send(clntSock[i], str, len, 0);
-    ReleaseMutex(hMutex);
+    ReleaseMutex(Mutex);
+}
+
+int Time_Hour() { // 시간 출력 함수 (Hour)
+
+    time_t curr_time;
+    struct tm* curr_tm;
+    curr_time = time(NULL);
+    curr_tm = localtime(&curr_time);
+
+    return curr_tm->tm_hour;
+}
+
+int Time_Min() { // 시간 출력 함수 (Min)
+
+    time_t curr_time;
+    struct tm* curr_tm;
+    curr_time = time(NULL);
+    curr_tm = localtime(&curr_time);
+
+    return curr_tm->tm_min;
 }
