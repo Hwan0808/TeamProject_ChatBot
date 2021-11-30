@@ -17,7 +17,8 @@
 
 HINSTANCE hInstance;
 SOCKET client_sock = NULL;
-HWND hwndIP; // 닉네임
+HWND hwndIP; // IP 주소 
+HWND hwndPort; // 포트
 HWND hwndName; // 닉네임
 HWND hwndSend; // 보내기 버튼
 HWND hwndEdit1; // 메시지 입력 창
@@ -26,6 +27,7 @@ HWND hWnd;
 HWND hWndFocus;
 
 char IP[25];
+char Port[25];
 char Name[25]; // 이름
 char NameStr[256]; // 이름 + 메시지
 char str[128]; // 메시지
@@ -45,7 +47,7 @@ LPTSTR lpszClass = _T("BasicApi"); // 글자 변환 함수
 void DisplayText(char* fmt, ...); // 메시지 출력 함수
 void err_quit(char* msg); // 오류 출력 함수
 
-void OnCommand(HWND hWnd, WPARAM wParam); 
+void OnCommand1(HWND hWnd, WPARAM wParam); 
 void OnCommand2(HWND hwnd, WPARAM wParam);
 void OnConnect(HWND hwnd);
 void OnDisConnect(HWND hwnd);
@@ -89,7 +91,7 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_COMMAND:
 
-        OnCommand(hWnd, wParam); return TRUE;
+        OnCommand1(hWnd, wParam); return TRUE;
 
     case WM_CLOSE:
         
@@ -105,7 +107,8 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_INITDIALOG:
 
-        hwndIP = GetDlgItem(hWnd, IDC_IPADDRESS1);
+        hwndIP = GetDlgItem(hWnd, IDC_IPADDRESS);
+        hwndPort = GetDlgItem(hWnd, IDC_IPADDRESS);
         SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
         SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
 
@@ -131,7 +134,7 @@ BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
     return TRUE;
 }
 
-void OnCommand(HWND hwnd, WPARAM wParam)
+void OnCommand1(HWND hwnd, WPARAM wParam)
 {
     switch (LOWORD(wParam))
     {
@@ -185,7 +188,8 @@ void OnConnect(HWND hwnd)
 {
     int retval;
 
-    GetDlgItemText(hwnd, IDC_IPADDRESS1, IP, 25);
+    GetDlgItemText(hwnd, IDC_IPADDRESS, IP, 25);
+    GetDlgItemText(hwnd, IDC_PORT, Port, 25);
 
     // socket()
     client_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -195,7 +199,7 @@ void OnConnect(HWND hwnd)
     ZeroMemory(&serveraddr, sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
     serveraddr.sin_addr.s_addr = inet_addr(IP);
-    serveraddr.sin_port = htons(SERVERPORT);
+    serveraddr.sin_port = htons(atoi(Port));
 
     // connect()
     retval = connect(client_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));

@@ -1,3 +1,3 @@
 ﻿  GUITCPClient.cpp
-C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\GUITCPClient.cpp(140,9): warning C4002: 함수 같은 매크로 호출 'DialogBoxA'에 대해 인수가 너무 많습니다.
+C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\GUITCPClient.cpp(143,9): warning C4002: 함수 같은 매크로 호출 'DialogBoxA'에 대해 인수가 너무 많습니다.
   GUITCPClient.vcxproj -> C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\Debug\GUITCPClient.exe
