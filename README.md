@@ -21,12 +21,14 @@
 
 ![image](https://user-images.githubusercontent.com/57865037/143832926-7de60ec1-cd16-4257-a773-c607c985358a.png)
 
+![image](https://user-images.githubusercontent.com/57865037/144167484-980a9aee-4834-4000-8b65-d5de1b7796d2.png)
+
 ## Bug Fix
 
 - 전체적인 코드 일괄 수정
 - 클라이언트간의 통신 가능
 - 원격 접속 문제 해결 (서버 담당: 이동건)
-- 서버 접속 폼 추가 완료 (서버IP 변경을 위해 클라이언트쪽에서 디버깅을 수행하지 않아도 됨)
+- 서버 접속 폼 추가 완료 (서버 IP 변경을 위해 클라이언트쪽에서 디버깅을 수행하지 않아도 됨)
 
 ## To Do List
 
