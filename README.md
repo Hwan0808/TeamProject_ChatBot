@@ -37,7 +37,18 @@
 
 ## 주요 알고리즘
 
-- ThreadMain(void* arg) socket() -> bind() -> listen() -> accept()의 기능을 수행하고 각 클라이언트와 통신이 가능하도록 스레드를 생성함.
-- RecvMsg(void* arg), SendMsg(void* arg) 스레드 함수를 설정하여 메시지를 받음과 동시에 전송이 가능하도록 구현하였음.
-- Time_Hour(), Time_Min() C++ 라이브러리에 있는 시간 함수 구조체를 사용하여 클라이언트가 접속하는 시간을 표현하였음.
-- BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 사용자가 이벤트를 발생시키면 대화상자 안에 있는 함수들이 작동하며 접속,해제,보내기 등의 기능을 수행함.
+- ThreadMain(void* arg)
+  <br> socket() -> bind() -> listen() -> accept()의 기능을 수행하고 각 클라이언트와 통신이 가능하도록 스레드를 생성함.
+  
+- RecvMsg(void* arg), SendMsg(void* arg) 
+  <br> 스레드 함수를 설정하여 메시지를 받음과 동시에 전송이 가능하도록 구현하였음.
+  
+- Time_Hour(), Time_Min() 
+  <br> C++ 라이브러리에 있는 시간 함수 구조체를 사용하여 클라이언트가 접속하는 시간을 표현하였음.
+
+- BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
+  <br> 사용자가 이벤트를 발생시키면 대화상자 안에 있는 함수들이 작동하며 접속,해제,보내기 등의 기능을 수행함.
+  
+- int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
+  <br> 윈속 초기화, 대화상자(다이얼로그)생성, 아이콘 추가 등의 기능을 수행함.
+  
