@@ -52,5 +52,5 @@
 - BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
   <br> 사용자가 이벤트를 발생시키면 대화상자 안에 있는 함수들이 작동하며 접속,해제,보내기 등의 기능을 수행함.
   
-
-  
+- void DisplayText(char* fmt, ...);
+  <br> 리스트 박스와 에디트 박스에 메시지 내용을 출력하는 기능을 수행함.
