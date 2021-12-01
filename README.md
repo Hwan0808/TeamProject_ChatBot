@@ -32,3 +32,10 @@
 - 서버에서 강제 내보내기 기능 추가
 - 파일 전송기능은 채팅방을 구현 하지 않으면 힘듬. 상대의 IP 주소를 알고있어야 가능함.
 - 서버 IP 주소가 바뀌면 수시로 디버깅을 해야하는 문제점이 있기 때문에 서버 접속 폼을 따로 추가해야함.
+
+## 주요 알고리즘
+
+- ThreadMain(void* arg) socket() -> bind() -> listen() -> accept()의 기능을 수행하고 각 클라이언트와 통신이 가능하도록 스레드를 생성함.
+- RecvMsg(void* arg), SendMsg(void* arg) 스레드 함수를 설정하여 메시지를 받음과 동시에 전송이 가능하도록 구현하였음.
+- Time_Hour(), Time_Min() C++ 라이브러리에 있는 시간 함수 구조체를 사용하여 클라이언트가 접속하는 시간을 표현하였음.
+- BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 사용자가 이벤트를 발생시키면 대화상자 안에 있는 함수들이 작동하며 접속,해제,보내기 등의 기능을 수행함.
