@@ -40,7 +40,7 @@
 - ThreadMain(void* arg)
   <br> socket() -> bind() -> listen() -> accept()의 기능을 수행하고 각 클라이언트와 통신이 가능하도록 스레드를 생성함.
   
-- RecvMsg(void* arg), SendMsg(void* arg) 
+- RecvMsg(void* arg), SendMsg(void* arg)
   <br> 스레드 함수를 설정하여 메시지를 받음과 동시에 전송이 가능하도록 구현하였음.
   
 - Time_Hour(), Time_Min() 
@@ -54,3 +54,8 @@
   
 - void DisplayText(char* fmt, ...);
   <br> 리스트 박스와 에디트 박스에 메시지 내용을 출력하는 기능을 수행함.
+
+## 참고 자료
+
+- https://blog.naver.com/ree31206/46430031
+- https://blog.naver.com/ree31206/46430004
