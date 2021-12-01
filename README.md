@@ -46,13 +46,13 @@
 - Time_Hour(), Time_Min() 
   <br> C++ 라이브러리에 있는 시간 함수 구조체를 사용하여 클라이언트가 접속하는 시간을 표현하였음.
 
-- int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
+- WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
   <br> 윈속 초기화, 대화상자(다이얼로그)생성, 아이콘 추가 등의 기능을 수행함.
 
-- BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
+- DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
   <br> 사용자가 이벤트를 발생시키면 대화상자 안에 있는 함수들이 작동하며 접속,해제,보내기 등의 기능을 수행함.
   
-- void DisplayText(char* fmt, ...);
+- DisplayText(char* fmt, ...);
   <br> 리스트 박스와 에디트 박스에 메시지 내용을 출력하는 기능을 수행함.
 
 ## 참고 자료
