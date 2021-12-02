@@ -18,6 +18,8 @@ SOCKET client_sock = NULL;
 HWND hwndIP; // IP 주소 
 HWND hwndPort; // 포트
 HWND hwndName; // 닉네임
+HWND hwndServConnect; // 접속 버튼
+HWND hwndServDisConnect; // 접속 종료 버튼
 HWND hwndSend; // 보내기 버튼
 HWND hwndEdit1; // 메시지 입력 창
 HWND hwndEdit2; // 채팅 화면
@@ -125,11 +127,14 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
 {
+    hwndServConnect = GetDlgItem(hWnd, IDC_CONNECT);
+    hwndServDisConnect = GetDlgItem(hWnd, IDC_EXIT);
     hwndSend = GetDlgItem(hWnd, IDC_SEND);
     hwndName = GetDlgItem(hWnd, IDC_ID);
     hwndEdit1 = GetDlgItem(hWnd, IDC_CHATEDIT);
     hwndEdit2 = GetDlgItem(hWnd, IDC_CHATVIEW);
     DisplayText("[TCP 클라이언트] 채팅 서버에 접속 되었습니다.\r\n");
+    EnableWindow(hwndServConnect, FALSE);
 
     return TRUE;
 }
@@ -220,6 +225,7 @@ void OnConnect1(HWND hwnd)
 
 void OnConnect2(HWND hwnd)
 {
+
     TerminateThread(Thread1, ThreadID1);
     TerminateThread(Thread2, ThreadID2);
 
@@ -245,6 +251,10 @@ void OnConnect2(HWND hwnd)
     }
     else {
         MessageBox(hWnd, _T("서버 접속 완료"), _T("서버 접속"), MB_ICONINFORMATION | MB_OK);
+        EnableWindow(hwndName, TRUE);
+        EnableWindow(hwndEdit1, TRUE);
+        EnableWindow(hwndServDisConnect, TRUE);
+        EnableWindow(hwndServConnect, FALSE);
     }
 
     Thread1 = (HANDLE)_beginthreadex(NULL, 0, SendMsg, (void*)client_sock, 0, (unsigned*)&ThreadID1);
@@ -266,6 +276,10 @@ void OnDisConnect(HWND hwnd)
         SetDlgItemText(hwnd, IDC_ID, "");
         closesocket(client_sock);
         DisplayText("[TCP 클라이언트] 채팅 서버와 연결이 끊어졌습니다.\r\n");
+        EnableWindow(hwndName, FALSE);
+        EnableWindow(hwndEdit1, FALSE);
+        EnableWindow(hwndServDisConnect, FALSE);
+        EnableWindow(hwndServConnect, TRUE);
 
     }
 }
