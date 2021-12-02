@@ -17,7 +17,7 @@
 - 클라이언트를 서버 관리자가 지정하여 강제로 접속 해제 할 수 있는 기능 추가
 - 클라이언트간의 채팅방 접속을 구현하고, 파일전송 기능 추가
 
-![image](https://user-images.githubusercontent.com/57865037/143832904-8e0aaac2-ebc1-44fc-ab61-f13bc6b4f006.png)
+![image](https://user-images.githubusercontent.com/57865037/144449210-9b339b24-91ae-4ba2-8414-e83e1711d8b8.png)
 
 ![image](https://user-images.githubusercontent.com/57865037/143832926-7de60ec1-cd16-4257-a773-c607c985358a.png)
 
@@ -29,6 +29,8 @@
 - 클라이언트간의 통신 가능
 - 원격 접속 문제 해결 (서버 담당: 이동건)
 - 서버 접속 폼 추가 완료 (서버 IP 변경을 위해 클라이언트쪽에서 디버깅을 수행하지 않아도 됨)
+- 스레드 중복 접속 문제 해결
+- 서버 내보내기 기능 추가
 
 ## To Do List
 

@@ -45,6 +45,7 @@ void DisplayText(char* fmt, ...);
 void OnClose(HWND hWnd); 
 void OnCommand(HWND hwnd, WPARAM wParam);
 void OnDisConnect(HWND hwnd);
+void OnDisConnectUser(HWND hwnd);
 
 // 다이얼로그 초기화
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam);
@@ -175,6 +176,9 @@ void OnCommand(HWND hwnd, WPARAM wParam)
 
     switch (LOWORD(wParam))
     {
+    case IDIGNORE:
+        OnDisConnectUser(hwnd); 
+        break;
 
     case IDCANCEL:
 
@@ -190,6 +194,15 @@ void OnDisConnect(HWND hwnd)
     retval = MessageBox(hwnd, _T("종료하시겠습니까?"), _T("서버 종료"), MB_ICONQUESTION | MB_YESNO);
     if (retval == IDYES) {
         OnClose(hwnd);
+    }
+}
+
+void OnDisConnectUser(HWND hwnd)
+{
+    for (int i = 0; i < clntNum; i++)
+    {
+        closesocket(clntSock[i]);
+        SendMessage(hwndList, LB_DELETESTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
     }
 }
 
@@ -256,21 +269,15 @@ DWORD WINAPI ProcessClient(void* arg)
 
     for (int i = 0; i < clntNum; i++) {
         
-        if (clntNum == 0) {
-            continue;
-        }
-        
         if (temp == clntSock[i]) {
             strlen = sprintf(servermsg, "[TCP 서버] 사용자가 접속을 종료했습니다.\r\n");
 
             DisplayText(servermsg);
-
             SendMsg(servermsg, strlen);
 
             for (; i < clntNum - 1; i++) 
                 clntSock[i] = clntSock[i + 1];
                 break;
-         
         }
     }
     clntNum--;
