@@ -300,7 +300,7 @@ unsigned int __stdcall SendMsg(void* arg)
     while (true) 
     {
         if (SEND) {
-            sprintf(NameStr, "[%d:%d][%s]:%s \r\n",Time_Hour(), Time_Min(), Name, str);
+            sprintf(NameStr, "[%02d:%02d][%s]:%s \r\n",Time_Hour(), Time_Min(), Name, str);
             send(client_sock, NameStr, (int)strlen(NameStr), 0);
 
             SEND = FALSE;

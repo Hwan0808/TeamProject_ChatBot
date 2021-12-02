@@ -294,23 +294,3 @@ void SendMsg(char* str, int len)
         send(clntSock[i], str, len, 0);
     ReleaseMutex(Mutex);
 }
-
-int Time_Hour() { // 시간 출력 함수 (Hour)
-
-    time_t curr_time;
-    struct tm* curr_tm;
-    curr_time = time(NULL);
-    curr_tm = localtime(&curr_time);
-
-    return curr_tm->tm_hour;
-}
-
-int Time_Min() { // 시간 출력 함수 (Min)
-
-    time_t curr_time;
-    struct tm* curr_tm;
-    curr_time = time(NULL);
-    curr_tm = localtime(&curr_time);
-
-    return curr_tm->tm_min;
-}
