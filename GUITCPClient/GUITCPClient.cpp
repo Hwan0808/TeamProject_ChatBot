@@ -13,8 +13,6 @@
 #include <process.h>
 #include "resource.h"
 
-#define SERVERPORT 9000
-
 HINSTANCE hInstance;
 SOCKET client_sock = NULL;
 HWND hwndIP; // IP 주소 
@@ -49,7 +47,8 @@ void err_quit(char* msg); // 오류 출력 함수
 
 void OnCommand1(HWND hWnd, WPARAM wParam); 
 void OnCommand2(HWND hwnd, WPARAM wParam);
-void OnConnect(HWND hwnd);
+void OnConnect1(HWND hwnd);
+void OnConnect2(HWND hwnd);
 void OnDisConnect(HWND hwnd);
 void OnSend(HWND hwnd);
 void OnClose(HWND hWnd);
@@ -72,7 +71,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         return 1;
 
     // 대화상자 생성
-    DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), NULL, DlgProc1); 
+    DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG2), NULL, DlgProc2);
 
     // 윈속 종료
     WSACleanup();
@@ -126,11 +125,12 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
 {
+    hwndSend = GetDlgItem(hWnd, IDC_SEND);
     hwndName = GetDlgItem(hWnd, IDC_ID);
     hwndEdit1 = GetDlgItem(hWnd, IDC_CHATEDIT);
     hwndEdit2 = GetDlgItem(hWnd, IDC_CHATVIEW);
+    DisplayText("[TCP 클라이언트] 채팅 서버에 접속 되었습니다.\r\n");
 
-    DisplayText("[TCP 클라이언트] 서버 접속 버튼을 누르세요.\r\n");
     return TRUE;
 }
 
@@ -140,7 +140,7 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
     {
     case IDC_CONNECT:
 
-        DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG2), NULL, DlgProc2, IDD_DIALOG2);
+        OnConnect2(hwnd);
         break;
 
     case IDC_EXIT:
@@ -163,7 +163,8 @@ void OnCommand2(HWND hwnd, WPARAM wParam)
     {
     case IDOK:
 
-        OnConnect(hwnd);
+        OnConnect1(hwnd);
+        DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), NULL, DlgProc1);
         break;
 
     case IDCANCEL:
@@ -184,7 +185,7 @@ void OnClose(HWND hWnd)
     }
 }
 
-void OnConnect(HWND hwnd)
+void OnConnect1(HWND hwnd)
 {
     int retval;
 
@@ -203,14 +204,47 @@ void OnConnect(HWND hwnd)
 
     // connect()
     retval = connect(client_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
+
     if (retval == SOCKET_ERROR) {
         err_quit("connect()");
     }
     else {
-        SetDlgItemText(hwnd, IDC_CHATVIEW, "");
         MessageBox(hWnd, _T("서버 접속 완료"), _T("서버 접속"), MB_ICONINFORMATION | MB_OK);
-        DisplayText("[TCP 클라이언트] 채팅 서버에 접속 되었습니다.\r\n");
         EndDialog(hwnd, 0);
+    }
+
+    Thread1 = (HANDLE)_beginthreadex(NULL, 0, SendMsg, (void*)client_sock, 0, (unsigned*)&ThreadID1);
+    Thread2 = (HANDLE)_beginthreadex(NULL, 0, RecvMsg, (void*)client_sock, 0, (unsigned*)&ThreadID2);
+    
+}
+
+void OnConnect2(HWND hwnd)
+{
+    TerminateThread(Thread1, ThreadID1);
+    TerminateThread(Thread2, ThreadID2);
+
+    EnableWindow(hwndSend, TRUE);
+
+    int retval;
+
+    // socket()
+    client_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (client_sock == INVALID_SOCKET) err_quit("socket()");
+
+    SOCKADDR_IN serveraddr;
+    ZeroMemory(&serveraddr, sizeof(serveraddr));
+    serveraddr.sin_family = AF_INET;
+    serveraddr.sin_addr.s_addr = inet_addr(IP);
+    serveraddr.sin_port = htons(atoi(Port));
+
+    // connect()
+    retval = connect(client_sock, (SOCKADDR*)&serveraddr, sizeof(serveraddr));
+
+    if (retval == SOCKET_ERROR) {
+        err_quit("connect()");
+    }
+    else {
+        MessageBox(hWnd, _T("서버 접속 완료"), _T("서버 접속"), MB_ICONINFORMATION | MB_OK);
     }
 
     Thread1 = (HANDLE)_beginthreadex(NULL, 0, SendMsg, (void*)client_sock, 0, (unsigned*)&ThreadID1);
@@ -220,10 +254,20 @@ void OnConnect(HWND hwnd)
 
 void OnDisConnect(HWND hwnd)
 {
-    SetDlgItemText(hwnd, IDC_CHATVIEW, "");
-    closesocket(client_sock);
-    MessageBox(hWnd, _T("서버 접속 종료"), _T("접속 종료"), MB_ICONINFORMATION | MB_OK);
-    DisplayText("[TCP 클라이언트] 채팅 서버와 연결이 끊어졌습니다.\r\n");
+    int retval;
+
+    retval = MessageBox(hwnd, _T("접속을 종료합니다"), _T("접속 종료"), MB_ICONINFORMATION | MB_YESNO);
+    
+    if (retval == IDYES) {
+
+        EnableWindow(hwndSend, FALSE); // 보내기 버튼 비활성화
+        SetDlgItemText(hwnd, IDC_CHATVIEW, "");
+        SetDlgItemText(hwnd, IDC_CHATEDIT, "");
+        SetDlgItemText(hwnd, IDC_ID, "");
+        closesocket(client_sock);
+        DisplayText("[TCP 클라이언트] 채팅 서버와 연결이 끊어졌습니다.\r\n");
+
+    }
 }
 
 void OnSend(HWND hwnd)
@@ -256,6 +300,7 @@ unsigned int __stdcall RecvMsg(void* arg)
     while (true)
     {
         int retval;
+
         retval = recv(client_sock, NameStr, sizeof(NameStr) - 1, 0);
         if (retval == -1) return 1;
 
@@ -263,7 +308,6 @@ unsigned int __stdcall RecvMsg(void* arg)
 
         if (retval > 0) {
             DisplayText(NameStr);
-
         }
         else {
             MessageBox(hWnd, _T("서버에 접속 되어 있지 않습니다."), _T("접속 종료"), MB_ICONERROR | MB_OK);
