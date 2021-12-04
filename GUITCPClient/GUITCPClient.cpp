@@ -46,6 +46,7 @@ LPTSTR lpszClass = _T("BasicApi"); // 글자 변환 함수
 
 void DisplayText(char* fmt, ...); // 메시지 출력 함수
 void err_quit(char* msg); // 오류 출력 함수
+void err_server(char* msg);
 
 void OnCommand1(HWND hWnd, WPARAM wParam); 
 void OnCommand2(HWND hwnd, WPARAM wParam);
@@ -54,6 +55,9 @@ void OnConnect2(HWND hwnd);
 void OnDisConnect(HWND hwnd);
 void OnSend(HWND hwnd);
 void OnClose(HWND hWnd);
+void OnFile(HWND hwnd);
+void OnInfo(HWND hwnd);
+
 
 unsigned int __stdcall SendMsg(void* arg); // 메시지 전송 함수
 unsigned int __stdcall RecvMsg(void* arg); // 메시지 수신 함수
@@ -82,6 +86,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    HBRUSH hBrush = CreateSolidBrush(RGB(230, 240, 250));
+
     switch (uMsg) {
 
     case WM_INITDIALOG:
@@ -89,6 +95,14 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         OnInitDialog(hWnd, hWnd, lParam);
         SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
         SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
+
+    case WM_CTLCOLORDLG:
+        
+        return (LRESULT)hBrush;
+
+    case WM_CTLCOLORSTATIC:
+        SetBkColor((HDC)wParam, RGB(230, 240, 250));
+        return (LRESULT)hBrush;
 
     case WM_COMMAND:
 
@@ -104,6 +118,8 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    HBRUSH hBrush = CreateSolidBrush(RGB(230, 240, 250));;
+
     switch (uMsg) {
 
     case WM_INITDIALOG:
@@ -112,6 +128,13 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         hwndPort = GetDlgItem(hWnd, IDC_IPADDRESS);
         SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
         SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
+
+    case WM_CTLCOLORDLG:
+        return (LRESULT)hBrush;
+
+    case WM_CTLCOLORSTATIC:
+        SetBkColor((HDC)wParam, RGB(230, 240, 250));
+        return (LRESULT)hBrush;
 
     case WM_COMMAND:
 
@@ -127,12 +150,15 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
 {
+
+
     hwndServConnect = GetDlgItem(hWnd, IDC_CONNECT);
     hwndServDisConnect = GetDlgItem(hWnd, IDC_EXIT);
     hwndSend = GetDlgItem(hWnd, IDC_SEND);
     hwndName = GetDlgItem(hWnd, IDC_ID);
     hwndEdit1 = GetDlgItem(hWnd, IDC_CHATEDIT);
     hwndEdit2 = GetDlgItem(hWnd, IDC_CHATVIEW);
+
     DisplayText("[TCP 클라이언트] 채팅 서버에 접속 되었습니다.\r\n");
     EnableWindow(hwndServConnect, FALSE);
 
@@ -158,6 +184,15 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
         OnSend(hwnd);
         break;
 
+    case ID_FILE:
+
+        OnFile(hwnd);
+        break;
+   
+    case ID_INFO:
+
+        OnInfo(hwnd);
+        break;
     }
 
 }
@@ -268,6 +303,9 @@ void OnDisConnect(HWND hwnd)
 
     retval = MessageBox(hwnd, _T("접속을 종료합니다"), _T("접속 종료"), MB_ICONINFORMATION | MB_YESNO);
     
+    TerminateThread(Thread1, ThreadID1);
+    TerminateThread(Thread2, ThreadID2);
+
     if (retval == IDYES) {
 
         EnableWindow(hwndSend, FALSE); // 보내기 버튼 비활성화
@@ -286,13 +324,31 @@ void OnDisConnect(HWND hwnd)
 
 void OnSend(HWND hwnd)
 {
-    GetDlgItemText(hwnd, IDC_ID, Name, 25);
-    GetDlgItemText(hwnd, IDC_CHATEDIT, str, sizeof(str));
-
-    SetDlgItemText(hwnd, IDC_CHATEDIT, "");
-    SetFocus(GetDlgItem(hwnd, IDC_CHATEDIT));
+    int id;
+    int msg;
     
-    SEND = TRUE;
+    id = GetDlgItemText(hwnd, IDC_ID, Name, 25);
+    msg = GetDlgItemText(hwnd, IDC_CHATEDIT, str, sizeof(str));
+
+    if (id == NULL || msg == NULL) {
+        MessageBox(hwnd, _T("아이디와 메시지를 입력하세요!"), _T("ID and Msg"), MB_ICONWARNING | MB_OK);
+        SEND = FALSE;
+    } else {
+        SetDlgItemText(hwnd, IDC_CHATEDIT, "");
+        SetFocus(GetDlgItem(hwnd, IDC_CHATEDIT));
+        SEND = TRUE;
+    }
+
+}
+
+void OnFile(HWND hwnd)
+{
+    MessageBox(hwnd, _T("파일 전송 테스트중입니다."), _T("파일 전송"), MB_ICONWARNING | MB_OK);
+}
+
+void OnInfo(HWND hwnd)
+{
+    MessageBox(hwnd, _T("정보 출력 테스트중입니다."), _T("정보"), MB_ICONWARNING | MB_OK);
 }
 
 unsigned int __stdcall SendMsg(void* arg)
@@ -316,16 +372,14 @@ unsigned int __stdcall RecvMsg(void* arg)
         int retval;
 
         retval = recv(client_sock, NameStr, sizeof(NameStr) - 1, 0);
-        if (retval == -1) return 1;
+        if (retval == -1) {
+            err_server("socket()"); 
+        }
 
         NameStr[retval] = 0;
 
         if (retval > 0) {
             DisplayText(NameStr);
-        }
-        else {
-            MessageBox(hWnd, _T("서버에 접속 되어 있지 않습니다."), _T("접속 종료"), MB_ICONERROR | MB_OK);
-            DisplayText("[TCP 클라이언트] 서버에 접속 되어 있지 않습니다.\r\n");
         }
      
     }
@@ -350,6 +404,12 @@ void DisplayText(char* fmt, ...)
 void err_quit(char *msg)
 {
     MessageBox(NULL, "채팅 서버 연결에 실패하였습니다. SERVER DISCONNET" , "클라이언트 종료", MB_ICONERROR);
+    exit(1);
+}
+
+void err_server(char* msg)
+{
+    MessageBox(NULL, "서버가 클라이언트를 강제 종료 시켰습니다. SERVER DENYED", "클라이언트 종료", MB_ICONERROR);
     exit(1);
 }
 

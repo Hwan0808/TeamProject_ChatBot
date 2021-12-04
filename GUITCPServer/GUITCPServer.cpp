@@ -148,6 +148,7 @@ unsigned int __stdcall ThreadMain(void* arg)
 //  서버 채팅 화면 대화상자
 BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    HBRUSH hBrush = CreateSolidBrush(RGB(230, 240, 250));
 
     switch (uMsg) {
 
@@ -157,6 +158,14 @@ BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
         SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
         break;
+
+    case WM_CTLCOLORDLG:
+
+        return (LRESULT)hBrush;
+
+    case WM_CTLCOLORSTATIC:
+        SetBkColor((HDC)wParam, RGB(230, 240, 250));
+        return (LRESULT)hBrush;
 
     case WM_CLOSE:
 
