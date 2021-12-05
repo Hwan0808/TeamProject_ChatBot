@@ -17,11 +17,11 @@
 - 클라이언트를 서버 관리자가 지정하여 강제로 접속 해제 할 수 있는 기능 추가
 - 클라이언트간의 채팅방 접속을 구현하고, 파일전송 기능 추가
 
-![image](https://user-images.githubusercontent.com/57865037/144449210-9b339b24-91ae-4ba2-8414-e83e1711d8b8.png)
+![image](https://user-images.githubusercontent.com/57865037/144731564-ccd3086b-cf46-423d-8ffd-cc2c30201872.png)
 
-![image](https://user-images.githubusercontent.com/57865037/143832926-7de60ec1-cd16-4257-a773-c607c985358a.png)
+![image](https://user-images.githubusercontent.com/57865037/144731562-78fdfd6d-f6df-424d-a179-37f0d9991e55.png)
 
-![image](https://user-images.githubusercontent.com/57865037/144167484-980a9aee-4834-4000-8b65-d5de1b7796d2.png)
+![image](https://user-images.githubusercontent.com/57865037/144731605-41dd8eec-ab73-48b9-9aa1-32bc0edc36d4.png)
 
 ## Bug Fix
 
@@ -35,7 +35,8 @@
 ## To Do List
 
 - 서버에서 강제 내보내기 기능 추가
-- 파일 전송기능은 채팅방을 구현 하지 않으면 힘듬. 상대의 IP 주소를 알고있어야 가능함.
+- 파일 전송기능 미구현, 테스트중
+- 메뉴바 테스트중
 
 ## 주요 알고리즘
 

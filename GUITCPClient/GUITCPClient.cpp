@@ -159,7 +159,7 @@ BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
     hwndEdit1 = GetDlgItem(hWnd, IDC_CHATEDIT);
     hwndEdit2 = GetDlgItem(hWnd, IDC_CHATVIEW);
 
-    DisplayText("[TCP 클라이언트] 채팅 서버에 접속 되었습니다.\r\n");
+    DisplayText("[CHATBOT] 채팅 서버에 접속 되었습니다.\r\n");
     EnableWindow(hwndServConnect, FALSE);
 
     return TRUE;
@@ -313,7 +313,7 @@ void OnDisConnect(HWND hwnd)
         SetDlgItemText(hwnd, IDC_CHATEDIT, "");
         SetDlgItemText(hwnd, IDC_ID, "");
         closesocket(client_sock);
-        DisplayText("[TCP 클라이언트] 채팅 서버와 연결이 끊어졌습니다.\r\n");
+        DisplayText("[CHATBOT] 채팅 서버와 연결이 끊어졌습니다.\r\n");
         EnableWindow(hwndName, FALSE);
         EnableWindow(hwndEdit1, FALSE);
         EnableWindow(hwndServDisConnect, FALSE);
@@ -403,13 +403,13 @@ void DisplayText(char* fmt, ...)
 
 void err_quit(char *msg)
 {
-    MessageBox(NULL, "채팅 서버 연결에 실패하였습니다. SERVER DISCONNET" , "클라이언트 종료", MB_ICONERROR);
+    MessageBox(NULL, "채팅 서버 연결에 실패하였습니다. SERVER DISCONNET" , "접속 종료", MB_ICONERROR);
     exit(1);
 }
 
 void err_server(char* msg)
 {
-    MessageBox(NULL, "서버가 클라이언트를 강제 종료 시켰습니다. SERVER DENYED", "클라이언트 종료", MB_ICONERROR);
+    MessageBox(NULL, "서버가 클라이언트를 강제 종료 시켰습니다. SERVER DENYED", "접속 종료", MB_ICONERROR);
     exit(1);
 }
 

@@ -110,7 +110,7 @@ unsigned int __stdcall ThreadMain(void* arg)
     listen(listen_sock, SOMAXCONN);
     if (listen_sock == SOCKET_ERROR) err_quit("listen()");
 
-    DisplayText("[TCP 서버] 사용자 접속 대기중 입니다.\r\n");
+    DisplayText("[CHATBOT] 사용자 접속 대기중 입니다.\r\n");
 
     while (true)
     {
@@ -127,7 +127,7 @@ unsigned int __stdcall ThreadMain(void* arg)
 
             if (client_sock == clntSock[i]) {
 
-                strlen = sprintf(servermsg, "[TCP 서버] 새로운 사용자가 접속했습니다.\r\n");
+                strlen = sprintf(servermsg, "[CHATBOT] 새로운 사용자가 접속했습니다.\r\n");
                 DisplayText(servermsg);
                 SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
                 SendMsg(servermsg, strlen);
@@ -279,7 +279,7 @@ DWORD WINAPI ProcessClient(void* arg)
     for (int i = 0; i < clntNum; i++) {
         
         if (temp == clntSock[i]) {
-            strlen = sprintf(servermsg, "[TCP 서버] 사용자가 접속을 종료했습니다.\r\n");
+            strlen = sprintf(servermsg, "[CHATBOT] 사용자가 접속을 종료했습니다.\r\n");
 
             DisplayText(servermsg);
             SendMsg(servermsg, strlen);
