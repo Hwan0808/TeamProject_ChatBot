@@ -14,6 +14,9 @@
 #include <fcntl.h> 
 #include "resource.h"
 
+// 에디트 박스 읽기전용 그리고 배경색 하얀색으로
+// 에디트 박스 내용 얻어와서 저장하기
+
 #define BUFSIZE 1024
 #define SERVERPORT 9000
 

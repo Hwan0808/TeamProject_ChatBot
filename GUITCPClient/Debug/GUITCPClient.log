@@ -1,4 +1,5 @@
 ﻿  GUITCPClient.cpp
-C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\GUITCPClient.cpp(267,9): warning C4002: 함수 같은 매크로 호출 'RtlZeroMemory'에 대해 인수가 너무 많습니다.
-C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\GUITCPClient.cpp(287,9): warning C4002: 함수 같은 매크로 호출 'RtlZeroMemory'에 대해 인수가 너무 많습니다.
+C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\GUITCPClient.cpp(269,9): warning C4002: 함수 같은 매크로 호출 'RtlZeroMemory'에 대해 인수가 너무 많습니다.
+C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\GUITCPClient.cpp(300,9): warning C4002: 함수 같은 매크로 호출 'RtlZeroMemory'에 대해 인수가 너무 많습니다.
+C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\GUITCPClient.cpp(279,17): warning C4101: 'retval' :참조되지 않은 지역 변수입니다.
   GUITCPClient.vcxproj -> C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\Debug\GUITCPClient.exe

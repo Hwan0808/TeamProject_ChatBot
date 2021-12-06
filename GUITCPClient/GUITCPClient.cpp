@@ -7,16 +7,17 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <time.h>
-#include <iostream>
-#include <string.h>
 #include <process.h>
-#include <commctrl.h>
-#include <gdiplus.h>
+#include<iostream>
+#include<fstream>
+#include<string>
+#include <string.h>
+#include <cstring>
 #include "resource.h"
-#include "richedit.h"
-#include "tlhelp32.h"
 
 #define MAX_FILENAME_SIZE 100 // 파일 경로와 파일 이름의 최대 크기
+#define BUFSIZE 4096
+using namespace std;
 
 HINSTANCE hInst;
 SOCKET client_sock;
@@ -264,6 +265,7 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
         break;
 
     case ID_SAVE_FILE: // 파일 저장 하기
+
         ZeroMemory(&OpenFileName, 0, sizeof(OPENFILENAME));
         OpenFileName.lStructSize = sizeof(OPENFILENAME);
         OpenFileName.hwndOwner = hwnd;
@@ -274,16 +276,27 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
 
         if (GetSaveFileName(&OpenFileName) != 0)
         {
+            int retval;
+            char msg[BUFSIZE];
+            DWORD dwSize = GetWindowTextLength(hwndEdit2);
+            GetDlgItemText(hwnd, IDC_CHATVIEW, msg, dwSize);
+
+            ofstream writeFile;
+            writeFile.open("대화내용.txt");
+            writeFile.write(msg, dwSize);
+            writeFile.close();
+
             wsprintf(SFilePathName, "%s", OpenFileName.lpstrFile);
-            MessageBox(hwnd, _T("저장하기를 선택하였습니다."), _T("저장하기 선택"), MB_OKCANCEL);
+            MessageBox(hwnd, _T("파일이 저장되었습니다."), _T("파일 저장"), MB_ICONINFORMATION | MB_OK);
         }
         else
         {
-            MessageBox(hwnd, _T("저장하기를 취소하였습니다."), _T("저장하기 취소"), MB_OKCANCEL);
+            MessageBox(hwnd, _T("저장하기를 취소하였습니다."), _T("저장하기 취소"), MB_ICONINFORMATION | MB_OK);
         }
         break;
 
     case ID_LOAD_FILE: // 파일 불러 오기
+
         ZeroMemory(&OpenFileName, 0, sizeof(OPENFILENAME));
         OpenFileName.lStructSize = sizeof(OPENFILENAME);
         OpenFileName.hwndOwner = hwnd;
@@ -295,7 +308,7 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
         if (GetOpenFileName(&OpenFileName) != 0)
         {
             wsprintf(SFilePathName, "%s", OpenFileName.lpstrFile);
-            MessageBox(hwnd, _T("불러오기를 선택하였습니다."), _T("불러오기 선택"), MB_OKCANCEL);
+            MessageBox(hwnd, SFilePathName, _T("파일 불러오기"), MB_OKCANCEL);
         }
         else
         {
@@ -511,6 +524,36 @@ void err_server(char* msg)
 {
     MessageBox(NULL, "서버가 클라이언트를 강제 종료 시켰습니다. SERVER DENYED", "접속 종료", MB_ICONERROR);
     exit(1);
+}
+
+int Time_Year() {
+
+    time_t timer;
+    struct tm* now_time;
+    timer = time(NULL);
+    now_time = localtime(&timer);
+
+    return now_time->tm_year;
+}
+
+int Time_Month() {
+
+    time_t timer;
+    struct tm* now_time;
+    timer = time(NULL);
+    now_time = localtime(&timer);
+
+    return now_time->tm_mon + 1;
+}
+
+int Time_Day() {
+
+    time_t timer;
+    struct tm* now_time;
+    timer = time(NULL);
+    now_time = localtime(&timer);
+
+    return now_time->tm_mday;
 }
 
 int Time_Hour() {
