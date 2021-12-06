@@ -282,11 +282,10 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
             GetDlgItemText(hwnd, IDC_CHATVIEW, msg, dwSize);
 
             ofstream writeFile;
-            writeFile.open("대화내용.txt");
+            writeFile.open(OpenFileName.lpstrFile);
             writeFile.write(msg, dwSize);
             writeFile.close();
 
-            wsprintf(SFilePathName, "%s", OpenFileName.lpstrFile);
             MessageBox(hwnd, _T("파일이 저장되었습니다."), _T("파일 저장"), MB_ICONINFORMATION | MB_OK);
         }
         else
