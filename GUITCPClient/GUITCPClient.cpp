@@ -11,9 +11,13 @@
 #include <iostream>
 #include <string.h>
 #include <process.h>
+#include <commctrl.h>
+#include <gdiplus.h>
 #include "resource.h"
+#include "richedit.h"
+#include "tlhelp32.h"
 
-HINSTANCE hInstance;
+HINSTANCE hInst;
 SOCKET client_sock = NULL;
 HWND hwndIP; // IP 주소 
 HWND hwndPort; // 포트
@@ -34,12 +38,14 @@ char str[128]; // 메시지
 BOOL SEND = FALSE;
 
 HICON hIconS, hIconB; // 아이콘
+HBITMAP hBitmap1, hBitmap2, hBitmap3;
 
 HANDLE Thread1, Thread2; // 스레드
 DWORD ThreadID1, ThreadID2; // 스레드 ID
 
-BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM IParam); // 대화상자 (다이얼로그)
+BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM IParam); // 메인 대화상자 (다이얼로그)
 BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM IParam); // IP 입력 대화상자 (다이얼로그)
+BOOL CALLBACK DlgProc3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // 클라이언트 정보
 
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam); // 대화상자 (초기화)
 LPTSTR lpszClass = _T("BasicApi"); // 글자 변환 함수
@@ -58,7 +64,6 @@ void OnClose(HWND hWnd);
 void OnFile(HWND hwnd);
 void OnInfo(HWND hwnd);
 
-
 unsigned int __stdcall SendMsg(void* arg); // 메시지 전송 함수
 unsigned int __stdcall RecvMsg(void* arg); // 메시지 수신 함수
 
@@ -70,6 +75,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
     hIconS = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_ICON_SMALL), IMAGE_ICON, 16, 16, LR_DEFAULTSIZE);
     hIconB = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_ICON_BIG), IMAGE_ICON, 16, 16, LR_DEFAULTSIZE);
+
+    hInst = hInstance;
 
     // 윈속 초기화
     WSADATA wsa;
@@ -88,21 +95,40 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     HBRUSH hBrush = CreateSolidBrush(RGB(230, 240, 250));
 
+    HDC hdc;
+    HDC memdc;
+    PAINTSTRUCT ps;
+    HBITMAP hBitmap1, hBitmap2, hBitmap3;
+
     switch (uMsg) {
 
     case WM_INITDIALOG:
 
         OnInitDialog(hWnd, hWnd, lParam);
-        SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
-        SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
+        hBitmap1 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP2));
+        hBitmap2 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP3));
+        hBitmap3 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP4));
+        SendMessage(hwndServConnect, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap1);
+        SendMessage(hwndServDisConnect, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap2);
+        SendMessage(hwndSend, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap3);
+        break;
 
     case WM_CTLCOLORDLG:
         
         return (LRESULT)hBrush;
 
+    case WM_CTLCOLORBTN:
+
+        return (LRESULT)hBrush;
+
     case WM_CTLCOLORSTATIC:
+
         SetBkColor((HDC)wParam, RGB(230, 240, 250));
         return (LRESULT)hBrush;
+
+    case WM_PAINT:
+
+        break;
 
     case WM_COMMAND:
 
@@ -111,6 +137,7 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_CLOSE:
         
         OnClose(hWnd);
+        break;
 
         }
         return FALSE;
@@ -128,11 +155,14 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         hwndPort = GetDlgItem(hWnd, IDC_IPADDRESS);
         SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
         SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
+        break;
 
     case WM_CTLCOLORDLG:
+
         return (LRESULT)hBrush;
 
     case WM_CTLCOLORSTATIC:
+
         SetBkColor((HDC)wParam, RGB(230, 240, 250));
         return (LRESULT)hBrush;
 
@@ -143,21 +173,64 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_CLOSE:
 
         OnClose(hWnd);
+        break;
+    }
+    return FALSE;
+}
 
+BOOL CALLBACK DlgProc3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{   
+    HBRUSH hBrush = CreateSolidBrush(RGB(255, 255, 255));;
+
+    HDC hdc;
+    HDC memdc;
+    PAINTSTRUCT ps;
+    static HBITMAP hBitMap;
+
+    switch (uMsg) {
+
+    case WM_INITDIALOG:
+        hBitMap = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP5));
+        SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
+        SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
+        break;
+
+    case WM_CTLCOLORDLG:
+
+        return (LRESULT)hBrush;
+
+    case WM_CTLCOLORSTATIC:
+
+        return (LRESULT)hBrush;
+
+    case WM_PAINT:
+        hdc = BeginPaint(hWnd, &ps);
+        memdc = CreateCompatibleDC(hdc);
+        SelectObject(memdc, hBitMap);
+        BitBlt(hdc, 60, 30, 100, 100, memdc, 0, 0, SRCCOPY);
+        DeleteObject(memdc);
+        EndPaint(hWnd, &ps);
+        break;
+
+    case WM_CLOSE:
+
+        EndDialog(hWnd, 0);
+        break;
     }
     return FALSE;
 }
 
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
 {
-
-
-    hwndServConnect = GetDlgItem(hWnd, IDC_CONNECT);
-    hwndServDisConnect = GetDlgItem(hWnd, IDC_EXIT);
-    hwndSend = GetDlgItem(hWnd, IDC_SEND);
     hwndName = GetDlgItem(hWnd, IDC_ID);
     hwndEdit1 = GetDlgItem(hWnd, IDC_CHATEDIT);
     hwndEdit2 = GetDlgItem(hWnd, IDC_CHATVIEW);
+    hwndServConnect = GetDlgItem(hWnd, IDC_CONNECT);
+    hwndServDisConnect = GetDlgItem(hWnd, IDC_EXIT);
+    hwndSend = GetDlgItem(hWnd, IDC_SEND);
+
+    SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS); // 아이콘
+    SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB); // 아이콘
 
     DisplayText("[CHATBOT] 채팅 서버에 접속 되었습니다.\r\n");
     EnableWindow(hwndServConnect, FALSE);
@@ -204,7 +277,7 @@ void OnCommand2(HWND hwnd, WPARAM wParam)
     case IDOK:
 
         OnConnect1(hwnd);
-        DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), NULL, DlgProc1);
+        DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), NULL, DlgProc1);
         break;
 
     case IDCANCEL:
@@ -255,12 +328,10 @@ void OnConnect1(HWND hwnd)
 
     Thread1 = (HANDLE)_beginthreadex(NULL, 0, SendMsg, (void*)client_sock, 0, (unsigned*)&ThreadID1);
     Thread2 = (HANDLE)_beginthreadex(NULL, 0, RecvMsg, (void*)client_sock, 0, (unsigned*)&ThreadID2);
-    
 }
 
 void OnConnect2(HWND hwnd)
 {
-
     TerminateThread(Thread1, ThreadID1);
     TerminateThread(Thread2, ThreadID2);
 
@@ -294,7 +365,6 @@ void OnConnect2(HWND hwnd)
 
     Thread1 = (HANDLE)_beginthreadex(NULL, 0, SendMsg, (void*)client_sock, 0, (unsigned*)&ThreadID1);
     Thread2 = (HANDLE)_beginthreadex(NULL, 0, RecvMsg, (void*)client_sock, 0, (unsigned*)&ThreadID2);
-
 }
 
 void OnDisConnect(HWND hwnd)
@@ -318,7 +388,6 @@ void OnDisConnect(HWND hwnd)
         EnableWindow(hwndEdit1, FALSE);
         EnableWindow(hwndServDisConnect, FALSE);
         EnableWindow(hwndServConnect, TRUE);
-
     }
 }
 
@@ -338,24 +407,26 @@ void OnSend(HWND hwnd)
         SetFocus(GetDlgItem(hwnd, IDC_CHATEDIT));
         SEND = TRUE;
     }
-
 }
 
 void OnFile(HWND hwnd)
 {
-    MessageBox(hwnd, _T("파일 전송 테스트중입니다."), _T("파일 전송"), MB_ICONWARNING | MB_OK);
+    
 }
 
 void OnInfo(HWND hwnd)
 {
-    MessageBox(hwnd, _T("정보 출력 테스트중입니다."), _T("정보"), MB_ICONWARNING | MB_OK);
+    DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG3), NULL, DlgProc3);
 }
 
 unsigned int __stdcall SendMsg(void* arg)
 {
+    int cnt = 0;
+
     while (true) 
     {
         if (SEND) {
+            
             sprintf(NameStr, "[%02d:%02d][%s]:%s \r\n",Time_Hour(), Time_Min(), Name, str);
             send(client_sock, NameStr, (int)strlen(NameStr), 0);
 
@@ -375,13 +446,12 @@ unsigned int __stdcall RecvMsg(void* arg)
         if (retval == -1) {
             err_server("socket()"); 
         }
-
         NameStr[retval] = 0;
 
         if (retval > 0) {
             DisplayText(NameStr);
         }
-     
+
     }
     return 0;
 }

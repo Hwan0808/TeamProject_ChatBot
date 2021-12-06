@@ -83,12 +83,16 @@
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="GUITCPClient.rc" />
+    <ResourceCompile Include="GUITCPClient.rc">
+      <FileType>DEF</FileType>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="chat_down.ico" />
     <Image Include="chat_my.ico" />
-    <Image Include="chat_up.ico" />
+    <Image Include="connect.bmp" />
+    <Image Include="disconnet.bmp" />
+    <Image Include="send.bmp" />
+    <Image Include="한국교통대학교_로고.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

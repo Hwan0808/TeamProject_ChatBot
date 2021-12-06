@@ -33,10 +33,16 @@
     <Image Include="chat_my.ico">
       <Filter>리소스 파일</Filter>
     </Image>
-    <Image Include="chat_down.ico">
+    <Image Include="connect.bmp">
       <Filter>리소스 파일</Filter>
     </Image>
-    <Image Include="chat_up.ico">
+    <Image Include="disconnet.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="send.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="한국교통대학교_로고.bmp">
       <Filter>리소스 파일</Filter>
     </Image>
   </ItemGroup>

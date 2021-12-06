@@ -10,6 +10,8 @@
 #include <tchar.h>
 #include <time.h>
 #include <string.h>
+#include <io.h>
+#include <fcntl.h> 
 #include "resource.h"
 
 #define BUFSIZE 1024
@@ -65,6 +67,9 @@ void err_quit(char* msg);
 // 시간 출력 함수
 int Time_Hour();
 int Time_Min();
+
+// 사용자 정의 데이터 수신 함수
+int recvn(SOCKET s, char* buf, int len, int flags);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLine, int nCmdShow)
@@ -122,6 +127,8 @@ unsigned int __stdcall ThreadMain(void* arg)
         clntSock[clntNum++] = client_sock;
         ReleaseMutex(Mutex);
      
+        getpeername(client_sock, (SOCKADDR*)&clientaddr, &addrlen);
+
         // 접속한 클라이언트 출력
         for (int i = 0; i < clntNum; i++) {
 
@@ -296,10 +303,34 @@ DWORD WINAPI ProcessClient(void* arg)
     return 0;
 }
 
+int recvn(SOCKET s, char* buf, int len, int flags)
+{
+    int received;
+    char* ptr = buf;
+    int left = len;
+
+    while (left > 0) {
+        received = recv(s, ptr, left, flags);
+        if (received == SOCKET_ERROR)
+            return SOCKET_ERROR;
+        else if (received == 0)
+            break;
+        left -= received;
+        ptr += received;
+    }
+
+    return (len - left);
+}
+
 void SendMsg(char* str, int len) 
 {
     WaitForSingleObject(Mutex, INFINITE);
     for (int i = 0; i < clntNum; i++) 
         send(clntSock[i], str, len, 0);
     ReleaseMutex(Mutex);
+}
+
+void Onfile(char* str, int len)
+{
+   
 }

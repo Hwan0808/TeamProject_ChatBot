@@ -1,1 +1,5 @@
-﻿  GUITCPClient.vcxproj -> C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\Debug\GUITCPClient.exe
+﻿  GUITCPClient.cpp
+C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\GUITCPClient.cpp(98,9): warning C4101: 'hdc' :참조되지 않은 지역 변수입니다.
+C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\GUITCPClient.cpp(100,17): warning C4101: 'ps' :참조되지 않은 지역 변수입니다.
+C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\GUITCPClient.cpp(99,9): warning C4101: 'memdc' :참조되지 않은 지역 변수입니다.
+  GUITCPClient.vcxproj -> C:\Users\chids\Desktop\github\TCP-IP\GUITCPClient\Debug\GUITCPClient.exe
