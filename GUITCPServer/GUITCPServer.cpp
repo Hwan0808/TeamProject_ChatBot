@@ -91,7 +91,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 unsigned int __stdcall ThreadMain(void* arg)
 {
     int strlen = 0;
-    char servermsg[256];
+    char msg[256];
 
     Mutex = CreateMutex(NULL, FALSE, NULL);
     if (Mutex == NULL) {
@@ -134,19 +134,16 @@ unsigned int __stdcall ThreadMain(void* arg)
 
             if (client_sock == clntSock[i]) {
 
-                strlen = sprintf(servermsg, "[CHATBOT] 새로운 사용자가 접속했습니다.\r\n");
-                DisplayText(servermsg);
+                strlen = sprintf(msg, "[CHATBOT] 새로운 사용자가 접속했습니다.\r\n");
+                DisplayText(msg);
                 SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
-                SendMsg(servermsg, strlen);
+                SendMsg(msg, strlen);
                 
             }
 
         }
-
         // 쓰레드 생성
-        Thread1 = (HANDLE)_beginthreadex(NULL, 0, (unsigned int(__stdcall*)(void*))ProcessClient,
-            (void*)client_sock, 0, (unsigned*)&ThreadID1);
-
+        Thread1 = (HANDLE)_beginthreadex(NULL, 0, (unsigned int(__stdcall*)(void*))ProcessClient, (void*)client_sock, 0, (unsigned*)&ThreadID1);
     }
     closesocket(listen_sock);
     return 0; 
@@ -171,6 +168,7 @@ BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return (LRESULT)hBrush;
 
     case WM_CTLCOLORSTATIC:
+
         SetBkColor((HDC)wParam, RGB(230, 240, 250));
         return (LRESULT)hBrush;
 
@@ -181,7 +179,8 @@ BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_COMMAND:
 
-        OnCommand(hWnd, wParam); return TRUE;
+        OnCommand(hWnd, wParam); 
+        return TRUE;
        
         }
         return FALSE;
@@ -189,10 +188,10 @@ BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 void OnCommand(HWND hwnd, WPARAM wParam)
 {
-
     switch (LOWORD(wParam))
     {
     case IDIGNORE:
+
         OnDisConnectUser(hwnd); 
         break;
 
@@ -270,26 +269,26 @@ void err_quit(char *msg)
 // 클라이언트와 데이터 통신
 DWORD WINAPI ProcessClient(void* arg)
 {
-    SOCKET temp = (SOCKET)arg;
+    SOCKET sock = (SOCKET)arg;
 
     int strlen = 0;
 
-    char msg[BUFSIZE];
-    char servermsg[256];
+    char buf[BUFSIZE];
+    char msg[256];
 
-    while ((strlen = recv(temp, msg, BUFSIZE, 0)) > 0)
+    while ((strlen = recv(sock, buf, BUFSIZE, 0)) > 0)
     {
-        SendMsg(msg, strlen);
+        SendMsg(buf, strlen);
     }
     WaitForSingleObject(Mutex, INFINITE);
 
     for (int i = 0; i < clntNum; i++) {
         
-        if (temp == clntSock[i]) {
-            strlen = sprintf(servermsg, "[CHATBOT] 사용자가 접속을 종료했습니다.\r\n");
+        if (sock == clntSock[i]) {
+            strlen = sprintf(msg, "[CHATBOT] 사용자가 접속을 종료했습니다.\r\n");
 
-            DisplayText(servermsg);
-            SendMsg(servermsg, strlen);
+            DisplayText(msg);
+            SendMsg(msg, strlen);
 
             for (; i < clntNum - 1; i++) 
                 clntSock[i] = clntSock[i + 1];
@@ -298,7 +297,7 @@ DWORD WINAPI ProcessClient(void* arg)
     }
     clntNum--;
     ReleaseMutex(Mutex);
-    closesocket(temp);
+    closesocket(sock);
     SendMessage(hwndList, LB_DELETESTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
     return 0;
 }
@@ -328,9 +327,4 @@ void SendMsg(char* str, int len)
     for (int i = 0; i < clntNum; i++) 
         send(clntSock[i], str, len, 0);
     ReleaseMutex(Mutex);
-}
-
-void Onfile(char* str, int len)
-{
-   
 }

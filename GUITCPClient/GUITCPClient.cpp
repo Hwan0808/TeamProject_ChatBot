@@ -18,7 +18,7 @@
 #include "tlhelp32.h"
 
 HINSTANCE hInst;
-SOCKET client_sock = NULL;
+SOCKET client_sock;
 HWND hwndIP; // IP 주소 
 HWND hwndPort; // 포트
 HWND hwndName; // 닉네임
@@ -45,7 +45,7 @@ DWORD ThreadID1, ThreadID2; // 스레드 ID
 
 BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM IParam); // 메인 대화상자 (다이얼로그)
 BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM IParam); // IP 입력 대화상자 (다이얼로그)
-BOOL CALLBACK DlgProc3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // 클라이언트 정보
+BOOL CALLBACK DlgProc3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // 클라이언트 정보 대화상자 (다이얼로그)
 
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam); // 대화상자 (초기화)
 LPTSTR lpszClass = _T("BasicApi"); // 글자 변환 함수
@@ -94,10 +94,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     HBRUSH hBrush = CreateSolidBrush(RGB(230, 240, 250));
-
-    HDC hdc;
-    HDC memdc;
-    PAINTSTRUCT ps;
     HBITMAP hBitmap1, hBitmap2, hBitmap3;
 
     switch (uMsg) {
@@ -204,6 +200,7 @@ BOOL CALLBACK DlgProc3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return (LRESULT)hBrush;
 
     case WM_PAINT:
+
         hdc = BeginPaint(hWnd, &ps);
         memdc = CreateCompatibleDC(hdc);
         SelectObject(memdc, hBitMap);
@@ -228,6 +225,8 @@ BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
     hwndServConnect = GetDlgItem(hWnd, IDC_CONNECT);
     hwndServDisConnect = GetDlgItem(hWnd, IDC_EXIT);
     hwndSend = GetDlgItem(hWnd, IDC_SEND);
+
+    SetFocus(hwndName);
 
     SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS); // 아이콘
     SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB); // 아이콘
@@ -411,7 +410,7 @@ void OnSend(HWND hwnd)
 
 void OnFile(HWND hwnd)
 {
-    
+    // 테스트 중 입니다.
 }
 
 void OnInfo(HWND hwnd)
@@ -421,7 +420,6 @@ void OnInfo(HWND hwnd)
 
 unsigned int __stdcall SendMsg(void* arg)
 {
-    int cnt = 0;
 
     while (true) 
     {
@@ -485,20 +483,20 @@ void err_server(char* msg)
 
 int Time_Hour() {
 
-    time_t curr_time;
-    struct tm* curr_tm;
-    curr_time = time(NULL);
-    curr_tm = localtime(&curr_time);
+    time_t timer;
+    struct tm* now_time;
+    timer = time(NULL);
+    now_time = localtime(&timer);
 
-    return curr_tm->tm_hour;
+    return now_time->tm_hour;
 }
 
 int Time_Min() {
 
-    time_t curr_time;
-    struct tm* curr_tm;
-    curr_time = time(NULL);
-    curr_tm = localtime(&curr_time);
+    time_t timer;
+    struct tm* now_time;
+    timer = time(NULL);
+    now_time = localtime(&timer);
 
-    return curr_tm->tm_min;
+    return now_time->tm_min;
 }
