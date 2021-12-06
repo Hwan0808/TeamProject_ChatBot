@@ -3,7 +3,6 @@
 #pragma comment(lib, "ws2_32")
 #include <winsock2.h>
 #include <windows.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <tchar.h>
@@ -16,6 +15,8 @@
 #include "resource.h"
 #include "richedit.h"
 #include "tlhelp32.h"
+
+#define MAX_FILENAME_SIZE 100 // 파일 경로와 파일 이름의 최대 크기
 
 HINSTANCE hInst;
 SOCKET client_sock;
@@ -50,6 +51,10 @@ BOOL CALLBACK DlgProc3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // �
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam); // 대화상자 (초기화)
 LPTSTR lpszClass = _T("BasicApi"); // 글자 변환 함수
 
+OPENFILENAME OpenFileName;
+TCHAR SFilePathName[MAX_FILENAME_SIZE];
+static TCHAR SFilter[] = "모든 파일\0*.*\0텍스트 파일\0*.txt\0비트맵 파일\0*.bmp";
+
 void DisplayText(char* fmt, ...); // 메시지 출력 함수
 void err_quit(char* msg); // 오류 출력 함수
 void err_server(char* msg);
@@ -61,7 +66,6 @@ void OnConnect2(HWND hwnd);
 void OnDisConnect(HWND hwnd);
 void OnSend(HWND hwnd);
 void OnClose(HWND hWnd);
-void OnFile(HWND hwnd);
 void OnInfo(HWND hwnd);
 
 unsigned int __stdcall SendMsg(void* arg); // 메시지 전송 함수
@@ -95,7 +99,7 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     HBRUSH hBrush = CreateSolidBrush(RGB(230, 240, 250));
     HBITMAP hBitmap1, hBitmap2, hBitmap3;
-
+    
     switch (uMsg) {
 
     case WM_INITDIALOG:
@@ -122,13 +126,10 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         SetBkColor((HDC)wParam, RGB(230, 240, 250));
         return (LRESULT)hBrush;
 
-    case WM_PAINT:
-
-        break;
-
     case WM_COMMAND:
 
-        OnCommand1(hWnd, wParam); return TRUE;
+        OnCommand1(hWnd, wParam); 
+        return TRUE;
 
     case WM_CLOSE:
         
@@ -149,6 +150,7 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         hwndIP = GetDlgItem(hWnd, IDC_IPADDRESS);
         hwndPort = GetDlgItem(hWnd, IDC_IPADDRESS);
+        SetFocus(hwndIP);
         SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
         SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
         break;
@@ -255,15 +257,50 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
 
         OnSend(hwnd);
         break;
-
-    case ID_FILE:
-
-        OnFile(hwnd);
-        break;
    
     case ID_INFO:
 
         OnInfo(hwnd);
+        break;
+
+    case ID_SAVE_FILE: // 파일 저장 하기
+        ZeroMemory(&OpenFileName, 0, sizeof(OPENFILENAME));
+        OpenFileName.lStructSize = sizeof(OPENFILENAME);
+        OpenFileName.hwndOwner = hwnd;
+        OpenFileName.lpstrFilter = SFilter;
+        OpenFileName.lpstrFile = SFilePathName;
+        OpenFileName.nMaxFile = MAX_FILENAME_SIZE;
+        OpenFileName.lpstrInitialDir = "C:\\";
+
+        if (GetSaveFileName(&OpenFileName) != 0)
+        {
+            wsprintf(SFilePathName, "%s", OpenFileName.lpstrFile);
+            MessageBox(hwnd, _T("저장하기를 선택하였습니다."), _T("저장하기 선택"), MB_OKCANCEL);
+        }
+        else
+        {
+            MessageBox(hwnd, _T("저장하기를 취소하였습니다."), _T("저장하기 취소"), MB_OKCANCEL);
+        }
+        break;
+
+    case ID_LOAD_FILE: // 파일 불러 오기
+        ZeroMemory(&OpenFileName, 0, sizeof(OPENFILENAME));
+        OpenFileName.lStructSize = sizeof(OPENFILENAME);
+        OpenFileName.hwndOwner = hwnd;
+        OpenFileName.lpstrFilter = SFilter;
+        OpenFileName.lpstrFile = SFilePathName;
+        OpenFileName.nMaxFile = MAX_FILENAME_SIZE;
+        OpenFileName.lpstrInitialDir = "C:\\";
+
+        if (GetOpenFileName(&OpenFileName) != 0)
+        {
+            wsprintf(SFilePathName, "%s", OpenFileName.lpstrFile);
+            MessageBox(hwnd, _T("불러오기를 선택하였습니다."), _T("불러오기 선택"), MB_OKCANCEL);
+        }
+        else
+        {
+            MessageBox(hwnd, _T("불러오기를 취소하였습니다."), _T("불러오기 취소"), MB_OKCANCEL);
+        }
         break;
     }
 
@@ -406,11 +443,6 @@ void OnSend(HWND hwnd)
         SetFocus(GetDlgItem(hwnd, IDC_CHATEDIT));
         SEND = TRUE;
     }
-}
-
-void OnFile(HWND hwnd)
-{
-    // 테스트 중 입니다.
 }
 
 void OnInfo(HWND hwnd)
