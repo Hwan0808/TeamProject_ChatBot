@@ -66,5 +66,4 @@
 - 핵심 API로 배우는 윈도우 프로그래밍
 - https://blog.naver.com/ree31206/46430031
 - https://blog.naver.com/ree31206/46430004
-- https://blog.naver.com/ree31206/46430004
 - https://blog.naver.com/makelove7942/220559541931
