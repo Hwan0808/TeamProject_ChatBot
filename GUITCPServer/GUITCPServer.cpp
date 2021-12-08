@@ -19,13 +19,13 @@
 
 #define BUFSIZE 1024
 #define SERVERPORT 9000
-
 SOCKET listen_sock = NULL;
 SOCKET client_sock = NULL;
 SOCKET clntSock[100];
 
 HWND hwndEdit; // 에디트 박스 편집 컨트롤 (채팅 화면)
 HWND hwndList; // 리스트 박스 편집 컨트롤 (클라이언트 리스트 항목)
+HWND hwndExit; // 내보내기 버튼 
 HICON hIconS, hIconB; // 아이콘
 
 SOCKADDR_IN serveraddr;
@@ -38,16 +38,16 @@ int addrlen;
 int clntNum = 0;
 
 // 메시지 처리 함수 (다이얼로그)
-BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); 
+BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 // 메시지 상자 텍스트 함수
-LPTSTR lpszClass = _T("BasicApi"); 
+LPTSTR lpszClass = _T("BasicApi");
 
 // 메시지 출력 함수
-void DisplayText(char* fmt, ...); 
+void DisplayText(char* fmt, ...);
 
 // 다이얼로그 메시지 처리 함수 
-void OnClose(HWND hWnd); 
+void OnClose(HWND hWnd);
 void OnCommand(HWND hwnd, WPARAM wParam);
 void OnDisConnect(HWND hwnd);
 void OnDisConnectUser(HWND hwnd);
@@ -68,6 +68,9 @@ DWORD WINAPI ProcessClient(void* arg);
 void err_quit(char* msg);
 
 // 시간 출력 함수
+int Time_Year();
+int Time_Month();
+int Time_Day();
 int Time_Hour();
 int Time_Min();
 
@@ -129,7 +132,7 @@ unsigned int __stdcall ThreadMain(void* arg)
         WaitForSingleObject(Mutex, INFINITE);
         clntSock[clntNum++] = client_sock;
         ReleaseMutex(Mutex);
-     
+
         getpeername(client_sock, (SOCKADDR*)&clientaddr, &addrlen);
 
         // 접속한 클라이언트 출력
@@ -137,11 +140,12 @@ unsigned int __stdcall ThreadMain(void* arg)
 
             if (client_sock == clntSock[i]) {
 
-                strlen = sprintf(msg, "[CHATBOT] 새로운 사용자가 접속했습니다.\r\n");
+                strlen = sprintf(msg, "[CHATBOT][%d-%02d-%02d][%02d:%02d] 새로운 사용자가 접속했습니다. \r\n", Time_Year(), Time_Month(), Time_Day(), Time_Hour(), Time_Min());
                 DisplayText(msg);
+
                 SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
                 SendMsg(msg, strlen);
-                
+
             }
 
         }
@@ -149,7 +153,7 @@ unsigned int __stdcall ThreadMain(void* arg)
         Thread1 = (HANDLE)_beginthreadex(NULL, 0, (unsigned int(__stdcall*)(void*))ProcessClient, (void*)client_sock, 0, (unsigned*)&ThreadID1);
     }
     closesocket(listen_sock);
-    return 0; 
+    return 0;
 
 }
 //  서버 채팅 화면 대화상자
@@ -182,11 +186,11 @@ BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_COMMAND:
 
-        OnCommand(hWnd, wParam); 
+        OnCommand(hWnd, wParam);
         return TRUE;
-       
-        }
-        return FALSE;
+
+    }
+    return FALSE;
 }
 
 void OnCommand(HWND hwnd, WPARAM wParam)
@@ -195,7 +199,7 @@ void OnCommand(HWND hwnd, WPARAM wParam)
     {
     case IDIGNORE:
 
-        OnDisConnectUser(hwnd); 
+        OnDisConnectUser(hwnd);
         break;
 
     case IDCANCEL:
@@ -256,7 +260,7 @@ BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
 }
 
 // 소켓 함수 오류 출력 후 종료
-void err_quit(char *msg)
+void err_quit(char* msg)
 {
     LPVOID lpMsgBuf;
     FormatMessage(
@@ -275,27 +279,31 @@ DWORD WINAPI ProcessClient(void* arg)
     SOCKET sock = (SOCKET)arg;
 
     int strlen = 0;
+    int retval = 0;
 
     char buf[BUFSIZE];
+    char name[25];
     char msg[256];
 
     while ((strlen = recv(sock, buf, BUFSIZE, 0)) > 0)
     {
+        retval = recv(sock, name, sizeof(name) - 1, 0);
+        name[retval] = 0;
         SendMsg(buf, strlen);
     }
     WaitForSingleObject(Mutex, INFINITE);
 
     for (int i = 0; i < clntNum; i++) {
-        
+
         if (sock == clntSock[i]) {
-            strlen = sprintf(msg, "[CHATBOT] 사용자가 접속을 종료했습니다.\r\n");
+            strlen = sprintf(msg, "[CHATBOT][%d-%02d-%02d][%02d:%02d] %s님이 접속을 종료했습니다. \r\n", Time_Year(), Time_Month(), Time_Day(), Time_Hour(), Time_Min(), name);
 
             DisplayText(msg);
             SendMsg(msg, strlen);
 
-            for (; i < clntNum - 1; i++) 
+            for (; i < clntNum - 1; i++)
                 clntSock[i] = clntSock[i + 1];
-                break;
+            break;
         }
     }
     clntNum--;
@@ -324,10 +332,60 @@ int recvn(SOCKET s, char* buf, int len, int flags)
     return (len - left);
 }
 
-void SendMsg(char* str, int len) 
+void SendMsg(char* str, int len)
 {
     WaitForSingleObject(Mutex, INFINITE);
-    for (int i = 0; i < clntNum; i++) 
+    for (int i = 0; i < clntNum; i++)
         send(clntSock[i], str, len, 0);
     ReleaseMutex(Mutex);
+}
+
+int Time_Year() {
+
+    time_t timer;
+    struct tm* now_time;
+    timer = time(NULL);
+    now_time = localtime(&timer);
+
+    return now_time->tm_year + 1900;
+}
+
+int Time_Month() {
+
+    time_t timer;
+    struct tm* now_time;
+    timer = time(NULL);
+    now_time = localtime(&timer);
+
+    return now_time->tm_mon + 1;
+}
+
+int Time_Day() {
+
+    time_t timer;
+    struct tm* now_time;
+    timer = time(NULL);
+    now_time = localtime(&timer);
+
+    return now_time->tm_mday;
+}
+
+int Time_Hour() {
+
+    time_t timer;
+    struct tm* now_time;
+    timer = time(NULL);
+    now_time = localtime(&timer);
+
+    return now_time->tm_hour;
+}
+
+int Time_Min() {
+
+    time_t timer;
+    struct tm* now_time;
+    timer = time(NULL);
+    now_time = localtime(&timer);
+
+    return now_time->tm_min;
 }

@@ -60,7 +60,7 @@ void DisplayText(char* fmt, ...); // 메시지 출력 함수
 void err_quit(char* msg); // 오류 출력 함수
 void err_server(char* msg);
 
-void OnCommand1(HWND hWnd, WPARAM wParam); 
+void OnCommand1(HWND hWnd, WPARAM wParam);
 void OnCommand2(HWND hwnd, WPARAM wParam);
 void OnConnect1(HWND hwnd);
 void OnConnect2(HWND hwnd);
@@ -100,7 +100,7 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     HBRUSH hBrush = CreateSolidBrush(RGB(230, 240, 250));
     HBITMAP hBitmap1, hBitmap2, hBitmap3;
-    
+
     switch (uMsg) {
 
     case WM_INITDIALOG:
@@ -115,7 +115,7 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_CTLCOLORDLG:
-        
+
         return (LRESULT)hBrush;
 
     case WM_CTLCOLORBTN:
@@ -129,16 +129,16 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_COMMAND:
 
-        OnCommand1(hWnd, wParam); 
+        OnCommand1(hWnd, wParam);
         return TRUE;
 
     case WM_CLOSE:
-        
+
         OnClose(hWnd);
         break;
 
-        }
-        return FALSE;
+    }
+    return FALSE;
 }
 
 BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -149,8 +149,10 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_INITDIALOG:
 
+        SetDlgItemText(hWnd, IDC_IPADDRESS, "221.139.96.157");
+        SetDlgItemText(hWnd, IDC_PORT, "9000");
         hwndIP = GetDlgItem(hWnd, IDC_IPADDRESS);
-        hwndPort = GetDlgItem(hWnd, IDC_IPADDRESS);
+        hwndPort = GetDlgItem(hWnd, IDC_PORT);
         SetFocus(hwndIP);
         SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
         SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
@@ -178,7 +180,7 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 BOOL CALLBACK DlgProc3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{   
+{
     HBRUSH hBrush = CreateSolidBrush(RGB(255, 255, 255));;
 
     HDC hdc;
@@ -234,7 +236,8 @@ BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
     SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS); // 아이콘
     SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB); // 아이콘
 
-    DisplayText("[CHATBOT] 채팅 서버에 접속 되었습니다.\r\n");
+    DisplayText("[CHATBOT] 채팅 서버에 오신 것을 환영합니다.\r\n");
+
     EnableWindow(hwndServConnect, FALSE);
 
     return TRUE;
@@ -258,7 +261,7 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
 
         OnSend(hwnd);
         break;
-   
+
     case ID_INFO:
 
         OnInfo(hwnd);
@@ -276,7 +279,6 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
 
         if (GetSaveFileName(&OpenFileName) != 0)
         {
-            int retval;
             char msg[BUFSIZE];
             DWORD dwSize = GetWindowTextLength(hwndEdit2);
             GetDlgItemText(hwnd, IDC_CHATVIEW, msg, dwSize);
@@ -290,11 +292,11 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
         }
         else
         {
-            MessageBox(hwnd, _T("저장하기를 취소하였습니다."), _T("저장하기 취소"), MB_ICONINFORMATION | MB_OK);
+            MessageBox(hwnd, _T("저장하기를 취소하였습니다."), _T("파일 저장 취소"), MB_ICONINFORMATION | MB_OK);
         }
         break;
 
-    case ID_LOAD_FILE: // 파일 불러 오기
+    case ID_LOAD_FILE: // 파일 전송 하기
 
         ZeroMemory(&OpenFileName, 0, sizeof(OPENFILENAME));
         OpenFileName.lStructSize = sizeof(OPENFILENAME);
@@ -306,12 +308,11 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
 
         if (GetOpenFileName(&OpenFileName) != 0)
         {
-            wsprintf(SFilePathName, "%s", OpenFileName.lpstrFile);
-            MessageBox(hwnd, SFilePathName, _T("파일 불러오기"), MB_OKCANCEL);
+            MessageBox(hwnd, _T("파일이 전송 되었습니다."), _T("파일 전송"), MB_ICONINFORMATION | MB_OK);
         }
         else
         {
-            MessageBox(hwnd, _T("불러오기를 취소하였습니다."), _T("불러오기 취소"), MB_OKCANCEL);
+            MessageBox(hwnd, _T("전송하기를 취소하였습니다."), _T("파일 전송 취소"), MB_ICONINFORMATION | MB_OK);
         }
         break;
     }
@@ -420,7 +421,7 @@ void OnDisConnect(HWND hwnd)
     int retval;
 
     retval = MessageBox(hwnd, _T("접속을 종료합니다"), _T("접속 종료"), MB_ICONINFORMATION | MB_YESNO);
-    
+
     TerminateThread(Thread1, ThreadID1);
     TerminateThread(Thread2, ThreadID2);
 
@@ -443,14 +444,15 @@ void OnSend(HWND hwnd)
 {
     int id;
     int msg;
-    
+
     id = GetDlgItemText(hwnd, IDC_ID, Name, 25);
     msg = GetDlgItemText(hwnd, IDC_CHATEDIT, str, sizeof(str));
 
     if (id == NULL || msg == NULL) {
         MessageBox(hwnd, _T("아이디와 메시지를 입력하세요!"), _T("ID and Msg"), MB_ICONWARNING | MB_OK);
         SEND = FALSE;
-    } else {
+    }
+    else {
         SetDlgItemText(hwnd, IDC_CHATEDIT, "");
         SetFocus(GetDlgItem(hwnd, IDC_CHATEDIT));
         SEND = TRUE;
@@ -465,12 +467,13 @@ void OnInfo(HWND hwnd)
 unsigned int __stdcall SendMsg(void* arg)
 {
 
-    while (true) 
+    while (true)
     {
         if (SEND) {
-            
-            sprintf(NameStr, "[%02d:%02d][%s]:%s \r\n",Time_Hour(), Time_Min(), Name, str);
+
+            sprintf(NameStr, "[%02d:%02d][%s]:%s \r\n", Time_Hour(), Time_Min(), Name, str);
             send(client_sock, NameStr, (int)strlen(NameStr), 0);
+            send(client_sock, Name, (int)strlen(Name), 0);
 
             SEND = FALSE;
         }
@@ -486,7 +489,7 @@ unsigned int __stdcall RecvMsg(void* arg)
 
         retval = recv(client_sock, NameStr, sizeof(NameStr) - 1, 0);
         if (retval == -1) {
-            err_server("socket()"); 
+            err_server("socket()");
         }
         NameStr[retval] = 0;
 
@@ -513,9 +516,9 @@ void DisplayText(char* fmt, ...)
     va_end(arg);
 }
 
-void err_quit(char *msg)
+void err_quit(char* msg)
 {
-    MessageBox(NULL, "채팅 서버 연결에 실패하였습니다. SERVER DISCONNET" , "접속 종료", MB_ICONERROR);
+    MessageBox(NULL, "채팅 서버 연결에 실패하였습니다. SERVER DISCONNET", "접속 종료", MB_ICONERROR);
     exit(1);
 }
 
@@ -523,36 +526,6 @@ void err_server(char* msg)
 {
     MessageBox(NULL, "서버가 클라이언트를 강제 종료 시켰습니다. SERVER DENYED", "접속 종료", MB_ICONERROR);
     exit(1);
-}
-
-int Time_Year() {
-
-    time_t timer;
-    struct tm* now_time;
-    timer = time(NULL);
-    now_time = localtime(&timer);
-
-    return now_time->tm_year;
-}
-
-int Time_Month() {
-
-    time_t timer;
-    struct tm* now_time;
-    timer = time(NULL);
-    now_time = localtime(&timer);
-
-    return now_time->tm_mon + 1;
-}
-
-int Time_Day() {
-
-    time_t timer;
-    struct tm* now_time;
-    timer = time(NULL);
-    now_time = localtime(&timer);
-
-    return now_time->tm_mday;
 }
 
 int Time_Hour() {
