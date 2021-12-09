@@ -178,7 +178,7 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         hdc = BeginPaint(hWnd, &ps);
         memdc = CreateCompatibleDC(hdc);
         SelectObject(memdc, hBitMap4);
-        BitBlt(hdc, 60, 25, 128, 128, memdc, 0, 0, SRCCOPY);
+        BitBlt(hdc, 68, 25, 128, 128, memdc, 0, 0, SRCCOPY);
         DeleteObject(memdc);
         EndPaint(hWnd, &ps);
         break;
