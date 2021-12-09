@@ -145,15 +145,21 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     HBRUSH hBrush = CreateSolidBrush(RGB(230, 240, 250));;
 
+    HDC hdc;
+    HDC memdc;
+    PAINTSTRUCT ps;
+    static HBITMAP hBitMap4;
+
     switch (uMsg) {
 
     case WM_INITDIALOG:
-
+        
         SetDlgItemText(hWnd, IDC_IPADDRESS, "221.139.96.157");
         SetDlgItemText(hWnd, IDC_PORT, "9000");
         hwndIP = GetDlgItem(hWnd, IDC_IPADDRESS);
         hwndPort = GetDlgItem(hWnd, IDC_PORT);
         SetFocus(hwndIP);
+        hBitMap4 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP6));
         SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
         SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
         break;
@@ -166,6 +172,16 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         SetBkColor((HDC)wParam, RGB(230, 240, 250));
         return (LRESULT)hBrush;
+
+    case WM_PAINT:
+
+        hdc = BeginPaint(hWnd, &ps);
+        memdc = CreateCompatibleDC(hdc);
+        SelectObject(memdc, hBitMap4);
+        BitBlt(hdc, 60, 25, 128, 128, memdc, 0, 0, SRCCOPY);
+        DeleteObject(memdc);
+        EndPaint(hWnd, &ps);
+        break;
 
     case WM_COMMAND:
 
@@ -298,7 +314,9 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
 
     case ID_LOAD_FILE: // 파일 전송 하기
 
-        ZeroMemory(&OpenFileName, 0, sizeof(OPENFILENAME));
+        MessageBox(hwnd, _T("테스트 중입니다. (미구현)"), _T("파일 전송"), MB_ICONWARNING | MB_OK);
+
+        /* ZeroMemory(&OpenFileName, 0, sizeof(OPENFILENAME));
         OpenFileName.lStructSize = sizeof(OPENFILENAME);
         OpenFileName.hwndOwner = hwnd;
         OpenFileName.lpstrFilter = SFilter;
@@ -314,6 +332,7 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
         {
             MessageBox(hwnd, _T("전송하기를 취소하였습니다."), _T("파일 전송 취소"), MB_ICONINFORMATION | MB_OK);
         }
+        */
         break;
     }
 

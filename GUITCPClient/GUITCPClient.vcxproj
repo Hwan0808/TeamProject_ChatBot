@@ -88,6 +88,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="chat_my.bmp" />
     <Image Include="chat_my.ico" />
     <Image Include="connect.bmp" />
     <Image Include="disconnet.bmp" />
