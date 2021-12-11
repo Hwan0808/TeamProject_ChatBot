@@ -16,7 +16,7 @@
 #include "resource.h"
 
 #define MAX_FILENAME_SIZE 100 // 파일 경로와 파일 이름의 최대 크기
-#define BUFSIZE 4096
+#define BUFSIZE 1024 // 버퍼 사이즈
 using namespace std;
 
 HINSTANCE hInst;
@@ -27,21 +27,20 @@ HWND hwndName; // 닉네임
 HWND hwndServConnect; // 접속 버튼
 HWND hwndServDisConnect; // 접속 종료 버튼
 HWND hwndSend; // 보내기 버튼
+HWND hwndFont; // 폰트 설정 버튼
 HWND hwndEdit1; // 메시지 입력 창
 HWND hwndEdit2; // 채팅 화면
 HWND hWnd;
 HWND hWndFocus;
 
-char IP[25];
-char Port[25];
+char IP[25]; // 아이피
+char Port[25]; // 포트
 char Name[25]; // 이름
 char NameStr[256]; // 이름 + 메시지
 char str[128]; // 메시지
 BOOL SEND = FALSE;
 
 HICON hIconS, hIconB; // 아이콘
-HBITMAP hBitmap1, hBitmap2, hBitmap3;
-
 HANDLE Thread1, Thread2; // 스레드
 DWORD ThreadID1, ThreadID2; // 스레드 ID
 
@@ -53,12 +52,20 @@ BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam); // 대화상자 (초기화
 LPTSTR lpszClass = _T("BasicApi"); // 글자 변환 함수
 
 OPENFILENAME OpenFileName;
-TCHAR SFilePathName[MAX_FILENAME_SIZE];
-static TCHAR SFilter[] = "모든 파일\0*.*\0텍스트 파일\0*.txt\0비트맵 파일\0*.bmp";
+TCHAR FilePathName[MAX_FILENAME_SIZE];
+static TCHAR Filter[] = "모든 파일\0*.*\0텍스트 파일\0*.txt\0비트맵 파일\0*.bmp";
+
+HDC hdc;
+PAINTSTRUCT ps;
+HFONT hFont, OldFont;
+
+CHOOSEFONT FONT;
+static COLORREF fColor;
+static LOGFONT LogFont;
 
 void DisplayText(char* fmt, ...); // 메시지 출력 함수
 void err_quit(char* msg); // 오류 출력 함수
-void err_server(char* msg);
+void err_server(char* msg); // 오류 출력 함수
 
 void OnCommand1(HWND hWnd, WPARAM wParam);
 void OnCommand2(HWND hwnd, WPARAM wParam);
@@ -99,7 +106,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     HBRUSH hBrush = CreateSolidBrush(RGB(230, 240, 250));
-    HBITMAP hBitmap1, hBitmap2, hBitmap3;
+
+    HBITMAP hBitmap1, hBitmap2, hBitmap3, hBitmap7;
 
     switch (uMsg) {
 
@@ -109,9 +117,13 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         hBitmap1 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP2));
         hBitmap2 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP3));
         hBitmap3 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP4));
+        hBitmap7 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP9));
+
         SendMessage(hwndServConnect, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap1);
         SendMessage(hwndServDisConnect, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap2);
         SendMessage(hwndSend, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap3);
+        SendMessage(hwndFont, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap7);
+
         break;
 
     case WM_CTLCOLORDLG:
@@ -132,6 +144,18 @@ BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         OnCommand1(hWnd, wParam);
         return TRUE;
 
+    case WM_PAINT:
+
+        hdc = BeginPaint(hWnd, &ps);
+        hFont = CreateFontIndirect(&LogFont);
+        OldFont = (HFONT)SelectObject(hdc, hFont);
+        SetTextColor(hdc, fColor);
+
+        SelectObject(hdc, OldFont);
+        DeleteObject(hFont);
+        EndPaint(hWnd, &ps);
+        break;
+
     case WM_CLOSE:
 
         OnClose(hWnd);
@@ -149,6 +173,7 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     HDC memdc;
     PAINTSTRUCT ps;
     static HBITMAP hBitMap4;
+    HBITMAP hBitmap5, hBitmap6;
 
     switch (uMsg) {
 
@@ -160,6 +185,8 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         hwndPort = GetDlgItem(hWnd, IDC_PORT);
         SetFocus(hwndIP);
         hBitMap4 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP6));
+        hBitmap5 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP7));
+        hBitmap6 = (HBITMAP)LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP8));
         SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
         SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB);
         break;
@@ -246,13 +273,15 @@ BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
     hwndServConnect = GetDlgItem(hWnd, IDC_CONNECT);
     hwndServDisConnect = GetDlgItem(hWnd, IDC_EXIT);
     hwndSend = GetDlgItem(hWnd, IDC_SEND);
+    hwndFont = GetDlgItem(hWnd, IDC_FONT);
 
     SetFocus(hwndName);
 
-    SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS); // 아이콘
-    SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB); // 아이콘
+    SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS); 
+    SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB); 
 
     DisplayText("[CHATBOT] 채팅 서버에 오신 것을 환영합니다.\r\n");
+    DisplayText("[CHATBOT] 아이디와 메시지를 입력하시고 채팅을 시작해주세요.\r\n");
 
     EnableWindow(hwndServConnect, FALSE);
 
@@ -261,8 +290,24 @@ BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
 
 void OnCommand1(HWND hwnd, WPARAM wParam)
 {
+
     switch (LOWORD(wParam))
     {
+    case IDC_FONT:
+
+        memset(&FONT, 0, sizeof(CHOOSEFONT));
+        FONT.lStructSize = sizeof(CHOOSEFONT);
+        FONT.hwndOwner = hwnd;
+        FONT.lpLogFont = &LogFont;
+        FONT.Flags = CF_EFFECTS | CF_SCREENFONTS;
+
+        if (ChooseFont(&FONT) != 0)
+        {
+            fColor = FONT.rgbColors;
+            InvalidateRgn(hwnd, NULL, TRUE);
+        }
+        break;
+      
     case IDC_CONNECT:
 
         OnConnect2(hwnd);
@@ -288,8 +333,8 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
         ZeroMemory(&OpenFileName, 0, sizeof(OPENFILENAME));
         OpenFileName.lStructSize = sizeof(OPENFILENAME);
         OpenFileName.hwndOwner = hwnd;
-        OpenFileName.lpstrFilter = SFilter;
-        OpenFileName.lpstrFile = SFilePathName;
+        OpenFileName.lpstrFilter = Filter;
+        OpenFileName.lpstrFile = FilePathName;
         OpenFileName.nMaxFile = MAX_FILENAME_SIZE;
         OpenFileName.lpstrInitialDir = "C:\\";
 
@@ -485,6 +530,7 @@ void OnInfo(HWND hwnd)
 
 unsigned int __stdcall SendMsg(void* arg)
 {
+ 
 
     while (true)
     {

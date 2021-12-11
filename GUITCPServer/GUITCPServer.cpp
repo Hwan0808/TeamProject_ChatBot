@@ -282,7 +282,7 @@ DWORD WINAPI ProcessClient(void* arg)
     int retval = 0;
 
     char buf[BUFSIZE];
-    char name[25];
+    char name[25] = { "익명의 사용자" };
     char msg[256];
 
     while ((strlen = recv(sock, buf, BUFSIZE, 0)) > 0)
@@ -311,25 +311,6 @@ DWORD WINAPI ProcessClient(void* arg)
     closesocket(sock);
     SendMessage(hwndList, LB_DELETESTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
     return 0;
-}
-
-int recvn(SOCKET s, char* buf, int len, int flags)
-{
-    int received;
-    char* ptr = buf;
-    int left = len;
-
-    while (left > 0) {
-        received = recv(s, ptr, left, flags);
-        if (received == SOCKET_ERROR)
-            return SOCKET_ERROR;
-        else if (received == 0)
-            break;
-        left -= received;
-        ptr += received;
-    }
-
-    return (len - left);
 }
 
 void SendMsg(char* str, int len)
