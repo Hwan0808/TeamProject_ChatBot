@@ -613,6 +613,7 @@ void OnInfo(HWND hwnd)
 void OnClear(HWND hwnd)
 {
     SetDlgItemText(hwnd, IDC_CHATVIEW, "");
+    DisplayText("[CHATBOT] 대화 내용이 초기화 되었습니다.\r\n");
 }
 
 void OnChangeName(HWND hwnd)

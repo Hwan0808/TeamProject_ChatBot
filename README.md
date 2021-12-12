@@ -17,11 +17,11 @@
 - 클라이언트를 서버 관리자가 지정하여 강제로 접속 해제 할 수 있는 기능 추가
 - 클라이언트간의 채팅방 접속을 구현하고, 파일전송 기능 추가
 
-![image](https://user-images.githubusercontent.com/57865037/144731564-ccd3086b-cf46-423d-8ffd-cc2c30201872.png)
+![image](https://user-images.githubusercontent.com/57865037/145698739-1e4005de-2ebe-46f8-a5c4-069994f0dd60.png)
 
-![image](https://user-images.githubusercontent.com/57865037/145418036-3094408c-c97c-4ab1-a817-f50cf58d5e9b.png)
+![image](https://user-images.githubusercontent.com/57865037/145698732-e7e87d02-50e2-4a32-9783-1dbc91e9b797.png)
 
-![image](https://user-images.githubusercontent.com/57865037/145663699-dac19786-993b-465b-a501-4d599d54bbf3.png)
+![image](https://user-images.githubusercontent.com/57865037/145698782-f77809a5-925f-42b2-8da1-e0e3c1b95721.png)
 
 ![image](https://user-images.githubusercontent.com/57865037/144815405-05d163f5-3c8e-43d2-9e7a-e0a51c31f889.png)
 
