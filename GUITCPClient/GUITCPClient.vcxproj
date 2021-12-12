@@ -93,6 +93,7 @@
     <Image Include="connect.bmp" />
     <Image Include="disconnet.bmp" />
     <Image Include="font.bmp" />
+    <Image Include="profile.bmp" />
     <Image Include="send.bmp" />
     <Image Include="한국교통대학교_로고.bmp" />
   </ItemGroup>

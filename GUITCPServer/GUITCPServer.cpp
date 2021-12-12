@@ -10,32 +10,42 @@
 #include <tchar.h>
 #include <time.h>
 #include <string.h>
+#include <iostream>
 #include <io.h>
 #include <fcntl.h> 
 #include "resource.h"
 
-// 에디트 박스 읽기전용 그리고 배경색 하얀색으로
-// 에디트 박스 내용 얻어와서 저장하기
-
 #define BUFSIZE 1024
 #define SERVERPORT 9000
+
+struct SOCKETINFO
+{
+    SOCKET sock = NULL;
+    HANDLE Thread;
+    DWORD ThreadID;
+    char Name[25] = { "익명의 사용자" };
+    int addrlen = 0;
+};
+
+SOCKETINFO SocketInfoArray[64];
 SOCKET listen_sock = NULL;
 SOCKET client_sock = NULL;
-SOCKET clntSock[100];
 
 HWND hwndEdit; // 에디트 박스 편집 컨트롤 (채팅 화면)
 HWND hwndList; // 리스트 박스 편집 컨트롤 (클라이언트 리스트 항목)
-HWND hwndExit; // 내보내기 버튼 
 HICON hIconS, hIconB; // 아이콘
 
 SOCKADDR_IN serveraddr;
 SOCKADDR_IN clientaddr;
-HANDLE Thread1, Thread2;
 HANDLE Mutex;
-DWORD ThreadID1, ThreadID2;
+HANDLE Thread2;
+DWORD ThreadID2;
 
 int addrlen;
 int clntNum = 0;
+char buf[BUFSIZE];
+char Name[25];
+BOOL ON_OFF = FALSE;
 
 // 메시지 처리 함수 (다이얼로그)
 BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -51,6 +61,7 @@ void OnClose(HWND hWnd);
 void OnCommand(HWND hwnd, WPARAM wParam);
 void OnDisConnect(HWND hwnd);
 void OnDisConnectUser(HWND hwnd);
+void OnAbort(HWND hwnd);
 
 // 다이얼로그 초기화
 BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam);
@@ -74,8 +85,7 @@ int Time_Day();
 int Time_Hour();
 int Time_Min();
 
-// 사용자 정의 데이터 수신 함수
-int recvn(SOCKET s, char* buf, int len, int flags);
+void voidBuffer(SOCKET s);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLine, int nCmdShow)
@@ -97,6 +107,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 unsigned int __stdcall ThreadMain(void* arg)
 {
     int strlen = 0;
+
+    int retval;
     char msg[256];
 
     Mutex = CreateMutex(NULL, FALSE, NULL);
@@ -128,29 +140,33 @@ unsigned int __stdcall ThreadMain(void* arg)
         // accept()
         addrlen = sizeof(clientaddr);
         client_sock = accept(listen_sock, (SOCKADDR*)&clientaddr, &addrlen);
-
+    
         WaitForSingleObject(Mutex, INFINITE);
-        clntSock[clntNum++] = client_sock;
+        SocketInfoArray[clntNum].sock = client_sock;
+        SocketInfoArray[clntNum].addrlen = addrlen;
+        retval = recv(SocketInfoArray[clntNum].sock, Name, sizeof(Name) - 1, 0);
+        Name[retval] = 0;
+        strcpy_s(SocketInfoArray[clntNum].Name, Name);
         ReleaseMutex(Mutex);
 
-        getpeername(client_sock, (SOCKADDR*)&clientaddr, &addrlen);
-
         // 접속한 클라이언트 출력
-        for (int i = 0; i < clntNum; i++) {
+        for (int i = 0; i < clntNum + 1; i++) {
 
-            if (client_sock == clntSock[i]) {
-
-                strlen = sprintf(msg, "[CHATBOT][%d-%02d-%02d][%02d:%02d] 새로운 사용자가 접속했습니다. \r\n", Time_Year(), Time_Month(), Time_Day(), Time_Hour(), Time_Min());
+            if (client_sock == SocketInfoArray[i].sock) {
+                
+                strlen = sprintf(msg, "[CHATBOT][%d-%02d-%02d][%02d:%02d] %s님이 접속했습니다. \r\n", Time_Year(), Time_Month(), Time_Day(), Time_Hour(), Time_Min(), SocketInfoArray[i].Name);
                 DisplayText(msg);
 
                 SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
                 SendMsg(msg, strlen);
-
+            
             }
 
         }
-        // 쓰레드 생성
-        Thread1 = (HANDLE)_beginthreadex(NULL, 0, (unsigned int(__stdcall*)(void*))ProcessClient, (void*)client_sock, 0, (unsigned*)&ThreadID1);
+            // 쓰레드 생성
+            SocketInfoArray[clntNum].Thread = (HANDLE)_beginthreadex(NULL, 0, (unsigned int(__stdcall*)(void*))ProcessClient, (void*)SocketInfoArray[clntNum].sock, 0, (unsigned*)&SocketInfoArray[clntNum].ThreadID);
+            clntNum++;
+
     }
     closesocket(listen_sock);
     return 0;
@@ -197,6 +213,11 @@ void OnCommand(HWND hwnd, WPARAM wParam)
 {
     switch (LOWORD(wParam))
     {
+    case IDABORT:
+
+        OnAbort(hwnd);
+        break;
+
     case IDIGNORE:
 
         OnDisConnectUser(hwnd);
@@ -207,6 +228,34 @@ void OnCommand(HWND hwnd, WPARAM wParam)
         OnDisConnect(hwnd);
         break;
     }
+}
+
+void OnAbort(HWND hwnd)
+{
+    int strlen = 0;
+    char msg[256];
+
+    if (ON_OFF == FALSE) {
+        for (int i = 0; i < clntNum; i++) {
+            SuspendThread(SocketInfoArray[i].Thread);
+        }
+        strlen = sprintf(msg,"[CHATBOT] 관리자가 채팅을 금지시켰습니다.\r\n");
+        SendMsg(msg, strlen);
+        ON_OFF = TRUE;
+    }
+    else if(ON_OFF == TRUE){
+
+        for (int i = 0; i < clntNum; i++) {
+            ResumeThread(SocketInfoArray[i].Thread);
+        }
+        for (int i = 0; i < clntNum; i++) {
+            voidBuffer(SocketInfoArray[i].sock);
+        }
+        strlen = sprintf(msg, "[CHATBOT] 관리자가 채팅을 활성화시켰습니다.\r\n");
+        SendMsg(msg, strlen);
+        ON_OFF = FALSE;
+    }
+
 }
 
 void OnDisConnect(HWND hwnd)
@@ -223,8 +272,8 @@ void OnDisConnectUser(HWND hwnd)
 {
     for (int i = 0; i < clntNum; i++)
     {
-        closesocket(clntSock[i]);
-        SendMessage(hwndList, LB_DELETESTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
+        closesocket(SocketInfoArray[i].sock);
+        SendMessage(hwndList, LB_DELETESTRING, 0, (LPARAM)SocketInfoArray[i].Name);
     }
 }
 
@@ -281,35 +330,37 @@ DWORD WINAPI ProcessClient(void* arg)
     int strlen = 0;
     int retval = 0;
 
-    char buf[BUFSIZE];
-    char name[25] = { "익명의 사용자" };
     char msg[256];
 
-    while ((strlen = recv(sock, buf, BUFSIZE, 0)) > 0)
+    while ((strlen = recv(sock, buf, BUFSIZE, 0)) > 0 
+        && (retval = recv(sock, Name, sizeof(Name) - 1, 0)) > 0)
     {
-        retval = recv(sock, name, sizeof(name) - 1, 0);
-        name[retval] = 0;
+        Name[retval] = 0;
+        buf[strlen] = 0;
+        DisplayText(buf);
         SendMsg(buf, strlen);
     }
     WaitForSingleObject(Mutex, INFINITE);
 
     for (int i = 0; i < clntNum; i++) {
 
-        if (sock == clntSock[i]) {
-            strlen = sprintf(msg, "[CHATBOT][%d-%02d-%02d][%02d:%02d] %s님이 접속을 종료했습니다. \r\n", Time_Year(), Time_Month(), Time_Day(), Time_Hour(), Time_Min(), name);
+        if (sock == SocketInfoArray[i].sock) {
+
+            strcpy_s(SocketInfoArray[i].Name, Name);
+            strlen = sprintf(msg, "[CHATBOT][%d-%02d-%02d][%02d:%02d] %s님이 접속을 종료했습니다. \r\n", Time_Year(), Time_Month(), Time_Day(), Time_Hour(), Time_Min(), SocketInfoArray[i].Name);
 
             DisplayText(msg);
             SendMsg(msg, strlen);
 
             for (; i < clntNum - 1; i++)
-                clntSock[i] = clntSock[i + 1];
+                SocketInfoArray[i] = SocketInfoArray[i + 1];
+            SendMessage(hwndList, LB_DELETESTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
             break;
         }
     }
     clntNum--;
     ReleaseMutex(Mutex);
     closesocket(sock);
-    SendMessage(hwndList, LB_DELETESTRING, 0, (LPARAM)inet_ntoa(clientaddr.sin_addr));
     return 0;
 }
 
@@ -317,7 +368,7 @@ void SendMsg(char* str, int len)
 {
     WaitForSingleObject(Mutex, INFINITE);
     for (int i = 0; i < clntNum; i++)
-        send(clntSock[i], str, len, 0);
+        send(SocketInfoArray[i].sock, str, len, 0);
     ReleaseMutex(Mutex);
 }
 
@@ -369,4 +420,14 @@ int Time_Min() {
     now_time = localtime(&timer);
 
     return now_time->tm_min;
+}
+
+void voidBuffer(SOCKET s)
+{
+    u_long tmpl, i;
+    char tmpc;
+    ioctlsocket(s, FIONREAD, &tmpl);
+    for (i = 0; i < tmpl; i++) {
+    recv(s, &tmpc, sizeof(char), 0);
+    }
 }
