@@ -1,4 +1,4 @@
-# TCP-IP
+# TeamProject_ChatBot
 
 인터넷 프로그래밍 8조 팀프로젝트 <br>
 
