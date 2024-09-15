@@ -1,5 +1,5 @@
-#define _CRT_SECURE_NO_WARNINGS         // ÃÖ½Å VC++ ÄÄÆÄÀÏ ½Ã °æ°í ¹æÁö
-#define _WINSOCK_DEPRECATED_NO_WARNINGS // ÃÖ½Å VC++ ÄÄÆÄÀÏ ½Ã °æ°í ¹æÁö
+#define _CRT_SECURE_NO_WARNINGS         // ìµœì‹  VC++ ì»´íŒŒì¼ ì‹œ ê²½ê³  ë°©ì§€
+#define _WINSOCK_DEPRECATED_NO_WARNINGS // ìµœì‹  VC++ ì»´íŒŒì¼ ì‹œ ê²½ê³  ë°©ì§€
 #pragma comment(lib, "ws2_32")
 #include <winsock2.h>
 #include <windows.h>
@@ -15,47 +15,47 @@
 #include <cstring>
 #include "resource.h"
 
-#define MAX_FILENAME_SIZE 100 // ÆÄÀÏ °æ·Î¿Í ÆÄÀÏ ÀÌ¸§ÀÇ ÃÖ´ë Å©±â
-#define BUFSIZE 1024 // ¹öÆÛ »çÀÌÁî
+#define MAX_FILENAME_SIZE 100 // íŒŒì¼ ê²½ë¡œì™€ íŒŒì¼ ì´ë¦„ì˜ ìµœëŒ€ í¬ê¸°
+#define BUFSIZE 1024 // ë²„í¼ ì‚¬ì´ì¦ˆ
 using namespace std;
 
 HINSTANCE hInst;
 SOCKET client_sock;
-HWND hwndIP; // IP ÁÖ¼Ò 
-HWND hwndPort; // Æ÷Æ®
-HWND hwndName; // ´Ğ³×ÀÓ
-HWND hwndServConnect; // Á¢¼Ó ¹öÆ°
-HWND hwndServDisConnect; // Á¢¼Ó Á¾·á ¹öÆ°
-HWND hwndSend; // º¸³»±â ¹öÆ°
-HWND hwndFont; // ÆùÆ® ¼³Á¤ ¹öÆ°
-HWND hwndEdit1; // ¸Ş½ÃÁö ÀÔ·Â Ã¢
-HWND hwndEdit2; // Ã¤ÆÃ È­¸é
-HWND hwndUserID; // À¯Àú ¾ÆÀÌµğ
-HWND hwndNickName; // ´Ğ³×ÀÓ º¯°æ
+HWND hwndIP; // IP ì£¼ì†Œ 
+HWND hwndPort; // í¬íŠ¸
+HWND hwndName; // ë‹‰ë„¤ì„
+HWND hwndServConnect; // ì ‘ì† ë²„íŠ¼
+HWND hwndServDisConnect; // ì ‘ì† ì¢…ë£Œ ë²„íŠ¼
+HWND hwndSend; // ë³´ë‚´ê¸° ë²„íŠ¼
+HWND hwndFont; // í°íŠ¸ ì„¤ì • ë²„íŠ¼
+HWND hwndEdit1; // ë©”ì‹œì§€ ì…ë ¥ ì°½
+HWND hwndEdit2; // ì±„íŒ… í™”ë©´
+HWND hwndUserID; // ìœ ì € ì•„ì´ë””
+HWND hwndNickName; // ë‹‰ë„¤ì„ ë³€ê²½
 HWND hWnd;
 HWND hWndFocus;
 
-char IP[25]; // ¾ÆÀÌÇÇ
-char Port[25]; // Æ÷Æ®
-char Name[25]; // ÀÌ¸§
-char NameStr[256]; // ÀÌ¸§ + ¸Ş½ÃÁö
-char str[128]; // ¸Ş½ÃÁö
+char IP[25]; // ì•„ì´í”¼
+char Port[25]; // í¬íŠ¸
+char Name[25]; // ì´ë¦„
+char NameStr[256]; // ì´ë¦„ + ë©”ì‹œì§€
+char str[128]; // ë©”ì‹œì§€
 BOOL SEND = FALSE;
 
-HICON hIconS, hIconB; // ¾ÆÀÌÄÜ
-HANDLE Thread1, Thread2; // ½º·¹µå
-DWORD ThreadID1, ThreadID2; // ½º·¹µå ID
+HICON hIconS, hIconB; // ì•„ì´ì½˜
+HANDLE Thread1, Thread2; // ìŠ¤ë ˆë“œ
+DWORD ThreadID1, ThreadID2; // ìŠ¤ë ˆë“œ ID
 
-BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM IParam); // ¸ŞÀÎ ´ëÈ­»óÀÚ (´ÙÀÌ¾ó·Î±×)
-BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM IParam); // IP ÀÔ·Â ´ëÈ­»óÀÚ (´ÙÀÌ¾ó·Î±×)
-BOOL CALLBACK DlgProc3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // Å¬¶óÀÌ¾ğÆ® Á¤º¸ ´ëÈ­»óÀÚ (´ÙÀÌ¾ó·Î±×)
-BOOL CALLBACK DlgProc4(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // ID ÀÔ·Â ´ëÈ­»óÀÚ (´ÙÀÌ¾ó·Î±×)
-BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam); // ´ëÈ­»óÀÚ (ÃÊ±âÈ­)
-LPTSTR lpszClass = _T("BasicApi"); // ±ÛÀÚ º¯È¯ ÇÔ¼ö
+BOOL CALLBACK DlgProc1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM IParam); // ë©”ì¸ ëŒ€í™”ìƒì (ë‹¤ì´ì–¼ë¡œê·¸)
+BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM IParam); // IP ì…ë ¥ ëŒ€í™”ìƒì (ë‹¤ì´ì–¼ë¡œê·¸)
+BOOL CALLBACK DlgProc3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // í´ë¼ì´ì–¸íŠ¸ ì •ë³´ ëŒ€í™”ìƒì (ë‹¤ì´ì–¼ë¡œê·¸)
+BOOL CALLBACK DlgProc4(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // ID ì…ë ¥ ëŒ€í™”ìƒì (ë‹¤ì´ì–¼ë¡œê·¸)
+BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam); // ëŒ€í™”ìƒì (ì´ˆê¸°í™”)
+LPTSTR lpszClass = _T("BasicApi"); // ê¸€ì ë³€í™˜ í•¨ìˆ˜
 
 OPENFILENAME OpenFileName;
 TCHAR FilePathName[MAX_FILENAME_SIZE];
-static TCHAR Filter[] = "¸ğµç ÆÄÀÏ\0*.*\0ÅØ½ºÆ® ÆÄÀÏ\0*.txt\0ºñÆ®¸Ê ÆÄÀÏ\0*.bmp";
+static TCHAR Filter[] = "ëª¨ë“  íŒŒì¼\0*.*\0í…ìŠ¤íŠ¸ íŒŒì¼\0*.txt\0ë¹„íŠ¸ë§µ íŒŒì¼\0*.bmp";
 
 HDC hdc;
 PAINTSTRUCT ps;
@@ -65,9 +65,9 @@ CHOOSEFONT FONT;
 static COLORREF fColor;
 static LOGFONT LogFont;
 
-void DisplayText(char* fmt, ...); // ¸Ş½ÃÁö Ãâ·Â ÇÔ¼ö
-void err_quit(char* msg); // ¿À·ù Ãâ·Â ÇÔ¼ö
-void err_server(char* msg); // ¿À·ù Ãâ·Â ÇÔ¼ö
+void DisplayText(char* fmt, ...); // ë©”ì‹œì§€ ì¶œë ¥ í•¨ìˆ˜
+void err_quit(char* msg); // ì˜¤ë¥˜ ì¶œë ¥ í•¨ìˆ˜
+void err_server(char* msg); // ì˜¤ë¥˜ ì¶œë ¥ í•¨ìˆ˜
 
 void OnCommand1(HWND hWnd, WPARAM wParam);
 void OnCommand2(HWND hwnd, WPARAM wParam);
@@ -81,11 +81,11 @@ void OnInfo(HWND hwnd);
 void OnClear(HWND hwnd);
 void OnChangeName(HWND hwnd);
 
-unsigned int __stdcall SendMsg(void* arg); // ¸Ş½ÃÁö Àü¼Û ÇÔ¼ö
-unsigned int __stdcall RecvMsg(void* arg); // ¸Ş½ÃÁö ¼ö½Å ÇÔ¼ö
+unsigned int __stdcall SendMsg(void* arg); // ë©”ì‹œì§€ ì „ì†¡ í•¨ìˆ˜
+unsigned int __stdcall RecvMsg(void* arg); // ë©”ì‹œì§€ ìˆ˜ì‹  í•¨ìˆ˜
 
-int Time_Hour(); // ½Ã°£ Ãâ·Â ÇÔ¼ö (Hour)
-int Time_Min(); // ½Ã°£ Ãâ·Â ÇÔ¼ö (Min)
+int Time_Hour(); // ì‹œê°„ ì¶œë ¥ í•¨ìˆ˜ (Hour)
+int Time_Min(); // ì‹œê°„ ì¶œë ¥ í•¨ìˆ˜ (Min)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLind, int nCmdShow)
@@ -95,15 +95,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     hInst = hInstance;
 
-    // À©¼Ó ÃÊ±âÈ­
+    // ìœˆì† ì´ˆê¸°í™”
     WSADATA wsa;
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
         return 1;
 
-    // ´ëÈ­»óÀÚ »ı¼º
+    // ëŒ€í™”ìƒì ìƒì„±
     DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG2), NULL, DlgProc2);
 
-    // À©¼Ó Á¾·á
+    // ìœˆì† ì¢…ë£Œ
     WSACleanup();
     return 0;
 }
@@ -186,8 +186,8 @@ BOOL CALLBACK DlgProc2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_INITDIALOG:
         
-        SetDlgItemText(hWnd, IDC_IPADDRESS, "221.139.96.157");
-        SetDlgItemText(hWnd, IDC_PORT, "9000");
+        SetDlgItemText(hWnd, IDC_IPADDRESS, "192.168.0.0"); //ì„œë²„ IP ì£¼ì†Œ ì…ë ¥
+        SetDlgItemText(hWnd, IDC_PORT, "8080"); // ì„œë²„ í¬íŠ¸ ë²ˆí˜¸ ì…ë ¥ 
         hwndIP = GetDlgItem(hWnd, IDC_IPADDRESS);
         hwndPort = GetDlgItem(hWnd, IDC_PORT);
         hwndUserID = GetDlgItem(hWnd, IDC_USERID);
@@ -325,8 +325,8 @@ BOOL OnInitDialog(HWND hWnd, HWND hWndFocus, LPARAM IParam)
     SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconS); 
     SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIconB); 
 
-    DisplayText("[CHATBOT] Ã¤ÆÃ ¼­¹ö¿¡ ¿À½Å °ÍÀ» È¯¿µÇÕ´Ï´Ù.\r\n");
-    DisplayText("[CHATBOT] ¸Ş½ÃÁö¸¦ ÀÔ·ÂÇÏ½Ã°í Ã¤ÆÃÀ» ½ÃÀÛÇØÁÖ¼¼¿ä.\r\n");
+    DisplayText("[CHATBOT] ì±„íŒ… ì„œë²„ì— ì˜¤ì‹  ê²ƒì„ í™˜ì˜í•©ë‹ˆë‹¤.\r\n");
+    DisplayText("[CHATBOT] ë©”ì‹œì§€ë¥¼ ì…ë ¥í•˜ì‹œê³  ì±„íŒ…ì„ ì‹œì‘í•´ì£¼ì„¸ìš”.\r\n");
 
     EnableWindow(hwndServConnect, FALSE);
 
@@ -384,7 +384,7 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
         OnClear(hwnd);
         break;
 
-    case ID_SAVE_FILE: // ´ëÈ­³»¿ë ÀúÀå ÇÏ±â
+    case ID_SAVE_FILE: // ëŒ€í™”ë‚´ìš© ì €ì¥ í•˜ê¸°
 
         ZeroMemory(&OpenFileName, 0, sizeof(OPENFILENAME));
         OpenFileName.lStructSize = sizeof(OPENFILENAME);
@@ -405,17 +405,17 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
             writeFile.write(msg, dwSize);
             writeFile.close();
 
-            MessageBox(hwnd, _T("ÆÄÀÏÀÌ ÀúÀåµÇ¾ú½À´Ï´Ù."), _T("ÆÄÀÏ ÀúÀå"), MB_ICONINFORMATION | MB_OK);
+            MessageBox(hwnd, _T("íŒŒì¼ì´ ì €ì¥ë˜ì—ˆìŠµë‹ˆë‹¤."), _T("íŒŒì¼ ì €ì¥"), MB_ICONINFORMATION | MB_OK);
         }
         else
         {
-            MessageBox(hwnd, _T("ÀúÀåÇÏ±â¸¦ Ãë¼ÒÇÏ¿´½À´Ï´Ù."), _T("ÆÄÀÏ ÀúÀå Ãë¼Ò"), MB_ICONINFORMATION | MB_OK);
+            MessageBox(hwnd, _T("ì €ì¥í•˜ê¸°ë¥¼ ì·¨ì†Œí•˜ì˜€ìŠµë‹ˆë‹¤."), _T("íŒŒì¼ ì €ì¥ ì·¨ì†Œ"), MB_ICONINFORMATION | MB_OK);
         }
         break;
 
-    case ID_LOAD_FILE: // ÆÄÀÏ Àü¼Û ÇÏ±â
+    case ID_LOAD_FILE: // íŒŒì¼ ì „ì†¡ í•˜ê¸°
 
-        MessageBox(hwnd, _T("Å×½ºÆ® ÁßÀÔ´Ï´Ù. (¹Ì±¸Çö)"), _T("ÆÄÀÏ Àü¼Û"), MB_ICONWARNING | MB_OK);
+        MessageBox(hwnd, _T("í…ŒìŠ¤íŠ¸ ì¤‘ì…ë‹ˆë‹¤. (ë¯¸êµ¬í˜„)"), _T("íŒŒì¼ ì „ì†¡"), MB_ICONWARNING | MB_OK);
 
         /* ZeroMemory(&OpenFileName, 0, sizeof(OPENFILENAME));
         OpenFileName.lStructSize = sizeof(OPENFILENAME);
@@ -427,11 +427,11 @@ void OnCommand1(HWND hwnd, WPARAM wParam)
 
         if (GetOpenFileName(&OpenFileName) != 0)
         {
-            MessageBox(hwnd, _T("ÆÄÀÏÀÌ Àü¼Û µÇ¾ú½À´Ï´Ù."), _T("ÆÄÀÏ Àü¼Û"), MB_ICONINFORMATION | MB_OK);
+            MessageBox(hwnd, _T("íŒŒì¼ì´ ì „ì†¡ ë˜ì—ˆìŠµë‹ˆë‹¤."), _T("íŒŒì¼ ì „ì†¡"), MB_ICONINFORMATION | MB_OK);
         }
         else
         {
-            MessageBox(hwnd, _T("Àü¼ÛÇÏ±â¸¦ Ãë¼ÒÇÏ¿´½À´Ï´Ù."), _T("ÆÄÀÏ Àü¼Û Ãë¼Ò"), MB_ICONINFORMATION | MB_OK);
+            MessageBox(hwnd, _T("ì „ì†¡í•˜ê¸°ë¥¼ ì·¨ì†Œí•˜ì˜€ìŠµë‹ˆë‹¤."), _T("íŒŒì¼ ì „ì†¡ ì·¨ì†Œ"), MB_ICONINFORMATION | MB_OK);
         }
         */
         break;
@@ -464,7 +464,7 @@ void OnCommand3(HWND hwnd, WPARAM wParam)
     case IDOK:
 
         GetDlgItemText(hwnd, IDC_USERNAME, Name, 25);
-        MessageBox(hWnd, _T("´Ğ³×ÀÓ º¯°æ ¿Ï·á"), _T("´Ğ³×ÀÓ º¯°æ"), MB_ICONINFORMATION | MB_OK);
+        MessageBox(hWnd, _T("ë‹‰ë„¤ì„ ë³€ê²½ ì™„ë£Œ"), _T("ë‹‰ë„¤ì„ ë³€ê²½"), MB_ICONINFORMATION | MB_OK);
         EndDialog(hwnd, 0);
         break;
 
@@ -480,7 +480,7 @@ void OnClose(HWND hWnd)
 {
     int retval;
 
-    retval = MessageBox(hWnd, _T("Á¾·áÇÏ½Ã°Ú½À´Ï±î?"), _T("Á¢¼Ó Á¾·á"), MB_ICONQUESTION | MB_YESNO);
+    retval = MessageBox(hWnd, _T("ì¢…ë£Œí•˜ì‹œê² ìŠµë‹ˆê¹Œ?"), _T("ì ‘ì† ì¢…ë£Œ"), MB_ICONQUESTION | MB_YESNO);
     if (retval == IDYES) {
         EndDialog(hWnd, 0);
     }
@@ -512,7 +512,7 @@ void OnConnect1(HWND hwnd)
         err_quit("connect()");
     }
     else {
-        MessageBox(hWnd, _T("¼­¹ö Á¢¼Ó ¿Ï·á"), _T("¼­¹ö Á¢¼Ó"), MB_ICONINFORMATION | MB_OK);
+        MessageBox(hWnd, _T("ì„œë²„ ì ‘ì† ì™„ë£Œ"), _T("ì„œë²„ ì ‘ì†"), MB_ICONINFORMATION | MB_OK);
         EndDialog(hwnd, 0);
     }
 
@@ -545,11 +545,11 @@ void OnConnect2(HWND hwnd)
         err_quit("connect()");
     }
     else {
-        MessageBox(hWnd, _T("¼­¹ö Á¢¼Ó ¿Ï·á"), _T("¼­¹ö Á¢¼Ó"), MB_ICONINFORMATION | MB_OK);
+        MessageBox(hWnd, _T("ì„œë²„ ì ‘ì† ì™„ë£Œ"), _T("ì„œë²„ ì ‘ì†"), MB_ICONINFORMATION | MB_OK);
         SetDlgItemText(hwnd, IDC_CHATVIEW, "");
         SetDlgItemText(hwnd, IDC_CHATEDIT, "");
-        DisplayText("[CHATBOT] Ã¤ÆÃ ¼­¹ö¿¡ ¿À½Å °ÍÀ» È¯¿µÇÕ´Ï´Ù.\r\n");
-        DisplayText("[CHATBOT] ¸Ş½ÃÁö¸¦ ÀÔ·ÂÇÏ½Ã°í Ã¤ÆÃÀ» ½ÃÀÛÇØÁÖ¼¼¿ä.\r\n");
+        DisplayText("[CHATBOT] ì±„íŒ… ì„œë²„ì— ì˜¤ì‹  ê²ƒì„ í™˜ì˜í•©ë‹ˆë‹¤.\r\n");
+        DisplayText("[CHATBOT] ë©”ì‹œì§€ë¥¼ ì…ë ¥í•˜ì‹œê³  ì±„íŒ…ì„ ì‹œì‘í•´ì£¼ì„¸ìš”.\r\n");
         EnableWindow(hwndName, TRUE);
         EnableWindow(hwndEdit1, TRUE);
         EnableWindow(hwndServDisConnect, TRUE);
@@ -567,18 +567,18 @@ void OnDisConnect(HWND hwnd)
 {
     int retval;
 
-    retval = MessageBox(hwnd, _T("Á¢¼ÓÀ» Á¾·áÇÕ´Ï´Ù"), _T("Á¢¼Ó Á¾·á"), MB_ICONINFORMATION | MB_YESNO);
+    retval = MessageBox(hwnd, _T("ì ‘ì†ì„ ì¢…ë£Œí•©ë‹ˆë‹¤"), _T("ì ‘ì† ì¢…ë£Œ"), MB_ICONINFORMATION | MB_YESNO);
 
     TerminateThread(Thread1, ThreadID1);
     TerminateThread(Thread2, ThreadID2);
 
     if (retval == IDYES) {
 
-        EnableWindow(hwndSend, FALSE); // º¸³»±â ¹öÆ° ºñÈ°¼ºÈ­
+        EnableWindow(hwndSend, FALSE); // ë³´ë‚´ê¸° ë²„íŠ¼ ë¹„í™œì„±í™”
         SetDlgItemText(hwnd, IDC_CHATVIEW, "");
         SetDlgItemText(hwnd, IDC_CHATEDIT, "");
         closesocket(client_sock);
-        DisplayText("[CHATBOT] Ã¤ÆÃ ¼­¹ö¿Í ¿¬°áÀÌ ²÷¾îÁ³½À´Ï´Ù.\r\n");
+        DisplayText("[CHATBOT] ì±„íŒ… ì„œë²„ì™€ ì—°ê²°ì´ ëŠì–´ì¡ŒìŠµë‹ˆë‹¤.\r\n");
         EnableWindow(hwndName, FALSE);
         EnableWindow(hwndEdit1, FALSE);
         EnableWindow(hwndServDisConnect, FALSE);
@@ -595,7 +595,7 @@ void OnSend(HWND hwnd)
     msg = GetDlgItemText(hwnd, IDC_CHATEDIT, str, sizeof(str));
 
     if (msg == NULL) {
-        MessageBox(hwnd, _T("º¸³¾ ¸Ş½ÃÁö¸¦ ÀÔ·ÂÇÏ¼¼¿ä!"), _T("¸Ş½ÃÁö ÀÔ·Â"), MB_ICONWARNING | MB_OK);
+        MessageBox(hwnd, _T("ë³´ë‚¼ ë©”ì‹œì§€ë¥¼ ì…ë ¥í•˜ì„¸ìš”!"), _T("ë©”ì‹œì§€ ì…ë ¥"), MB_ICONWARNING | MB_OK);
         SEND = FALSE;
     }
     else {
@@ -613,7 +613,7 @@ void OnInfo(HWND hwnd)
 void OnClear(HWND hwnd)
 {
     SetDlgItemText(hwnd, IDC_CHATVIEW, "");
-    DisplayText("[CHATBOT] ´ëÈ­ ³»¿ëÀÌ ÃÊ±âÈ­ µÇ¾ú½À´Ï´Ù.\r\n");
+    DisplayText("[CHATBOT] ëŒ€í™” ë‚´ìš©ì´ ì´ˆê¸°í™” ë˜ì—ˆìŠµë‹ˆë‹¤.\r\n");
 }
 
 void OnChangeName(HWND hwnd)
@@ -675,13 +675,13 @@ void DisplayText(char* fmt, ...)
 
 void err_quit(char* msg)
 {
-    MessageBox(NULL, "Ã¤ÆÃ ¼­¹ö ¿¬°á¿¡ ½ÇÆĞÇÏ¿´½À´Ï´Ù. SERVER DISCONNET", "Á¢¼Ó Á¾·á", MB_ICONERROR);
+    MessageBox(NULL, "ì±„íŒ… ì„œë²„ ì—°ê²°ì— ì‹¤íŒ¨í•˜ì˜€ìŠµë‹ˆë‹¤. SERVER DISCONNET", "ì ‘ì† ì¢…ë£Œ", MB_ICONERROR);
     exit(1);
 }
 
 void err_server(char* msg)
 {
-    MessageBox(NULL, "¼­¹ö °ü¸®ÀÚ°¡ °­Á¦ Ãß¹æ½ÃÄ×½À´Ï´Ù. SERVER DENYED", "Á¢¼Ó Á¾·á", MB_ICONERROR);
+    MessageBox(NULL, "ì„œë²„ ê´€ë¦¬ìê°€ ê°•ì œ ì¶”ë°©ì‹œì¼°ìŠµë‹ˆë‹¤. SERVER DENYED", "ì ‘ì† ì¢…ë£Œ", MB_ICONERROR);
     exit(1);
 }
 
